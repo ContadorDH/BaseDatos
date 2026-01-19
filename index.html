@@ -1,0 +1,1564 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>IPUC · Miembros (PWA)</title>
+
+  <!-- PWA -->
+ <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0b1020" />
+
+  <!-- Iconos -->
+<link rel="icon" sizes="192x192" href="./icono-192.png" />
+<link rel="icon" sizes="512x512" href="./icono-512.png" />
+
+
+    <!-- Meta tags para iOS (Safari) -->
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IPUC Miembros">
+
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root{
+      --bg:#0b1020;--card:#121a33;--muted:#9aa4c0;--text:#e9ecf6;
+      --accent:#4c7dff;--border:rgba(255,255,255,.08);--ok:#2dd4bf;--danger:#ff4c6a;
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(76,125,255,0.25), transparent 60%),
+        radial-gradient(1000px 500px at 90% 30%, rgba(45,212,191,0.18), transparent 60%),
+        var(--bg);
+    }
+    .header{position:sticky;top:0;backdrop-filter:blur(12px);background:rgba(11,16,32,.75);border-bottom:1px solid var(--border);z-index:5}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
+    .brand{display:flex;flex-direction:column;gap:2px}
+    .brand .title{font-weight:900;letter-spacing:.2px}
+    .small{font-size:12px;color:var(--muted)}
+    .nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn{
+      padding:10px 14px;border-radius:12px;border:1px solid var(--border);
+      background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;
+      font-weight: 600; letter-spacing:.2px;
+      transition: background .15s ease, border-color .15s ease, transform .05s ease;
+    }
+    .btn:hover{background:rgba(255,255,255,.10)}
+    .btn:active{ transform: translateY(1px); }
+    .btn.ok{
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn.ok:hover{ background: rgba(255,255,255,.10); }
+    .btn.primary{
+      background: linear-gradient(180deg, #4c7dff, #3c68e0);
+      border: none;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(76,125,255,.25);
+    }
+    .btn.primary:hover{
+      background: linear-gradient(180deg, #5a88ff, #4c7dff);
+    }
+    .btn.edit{
+      background: transparent;
+      border: 1px solid rgba(154,164,192,.35);
+      color: var(--muted);
+    }
+    .btn.edit:hover{
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+    }
+    .btn.danger{
+      background: rgba(255,76,106,.08);
+      border: 1px solid rgba(255,76,106,.35);
+      color: #ff8fa3;
+    }
+    .btn.danger:hover{
+      background: rgba(255,76,106,.14);
+      color: #ffd1da;
+    }
+
+    .container{max-width:1200px;margin:0 auto;padding:20px}
+    .card{
+      background:rgba(18,26,51,.9);border:1px solid var(--border);border-radius:16px;
+      padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.25)
+    }
+    hr.sep{border:0;border-top:1px solid var(--border);margin:14px 0}
+    .row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+    .col{flex:1;min-width:220px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;}
+    input,select,textarea{
+      width:100%;
+      padding:12px 14px;
+      font-size:14px;
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:14px;
+      outline:none;
+      pointer-events:auto;
+    }
+    input::placeholder, textarea::placeholder{ color: rgba(154,164,192,.75); }
+    input[type="date"]{ color-scheme: dark; }
+    input[type="file"]{ color: var(--muted); }
+    input[type="file"]::-webkit-file-upload-button{
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    input[type="file"]::-webkit-file-upload-button:hover{ background: rgba(255,255,255,.12); }
+
+    textarea{min-height:180px;resize:vertical}
+    .badge{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted)}
+    .panel{background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:16px;padding:14px}
+    .muted{color:var(--muted)}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px}
+    .avatar{
+      width:150px;height:150px;border-radius:18px;border:1px solid var(--border);
+      background: rgba(0,0,0,.35);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+    .avatar img{max-width:100%;max-height:100%;object-fit:contain;}
+
+    .filebox{border:1px dashed var(--border);border-radius:14px;padding:10px;background:rgba(255,255,255,.03);}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width: 980px){ .grid-2{grid-template-columns:1fr} }
+
+    .searchbar{display:flex;gap:10px;align-items:center;}
+    .searchbar input{padding:10px 12px;}
+    .search-actions{display:flex;gap:10px;align-items:center;}
+
+    .suggestions{
+      position:absolute;top:calc(100% + 8px);left:0;right:0;
+      border:1px solid var(--border);border-radius:14px;background:rgba(0,0,0,.92);
+      display:none;z-index:9999;max-height:280px;overflow-y:auto;overflow-x:hidden;
+      box-shadow:0 18px 45px rgba(0,0,0,.45);
+    }
+    .suggestions::-webkit-scrollbar{width:8px}
+    .suggestions::-webkit-scrollbar-track{background:transparent}
+    .suggestions::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:10px}
+    .suggestions::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25)}
+    .suggestions .item{
+      padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;
+      border-top:1px solid var(--border);
+    }
+    .suggestions .item:first-child{border-top:none}
+    .suggestions .item:hover{background:rgba(255,255,255,.06)}
+    .suggestions .left{display:flex;flex-direction:column;gap:2px}
+    .suggestions .right{color:var(--muted);font-size:12px;white-space:nowrap}
+
+    .toast-container{
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; display:flex; flex-direction:column; align-items:center; pointer-events:none;
+    }
+    .toast{ pointer-events:auto; }
+    .toast{
+      background: rgba(18,26,51,.95);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      min-width: 260px;
+      max-width: 360px;
+      color: var(--text);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      animation: toastIn .25s ease-out;
+      font-size: 14px;
+    }
+    .toast.error{ border-left: 4px solid var(--danger); }
+    .toast.success{ border-left: 4px solid var(--ok); }
+    .toast.info{ border-left: 4px solid var(--accent); }
+    @keyframes toastIn{ from{ opacity:0; transform: translateY(-6px);} to{ opacity:1; transform: translateY(0);} }
+
+    .aviso-contenedor{
+      position: fixed; top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.5);
+      display:flex; justify-content:center; align-items:center;
+      z-index: 99999; opacity:0; visibility:hidden; transition: all .3s ease;
+      backdrop-filter: blur(4px);
+      padding: 16px; overflow:auto;
+    }
+    .aviso-contenedor.mostrar{ opacity:1; visibility:visible; }
+    .aviso{
+      background: rgba(18,26,51,.98);
+      padding: 28px 32px;
+      border-radius: 20px;
+      max-width: 90%;
+      width: 420px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      color: var(--text);
+      border: 1px solid var(--border);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+    .aviso-contenedor.mostrar .aviso{ transform: scale(1) translateY(0); }
+
+    .select{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border);
+      background:rgba(255,255,255,.06);color:var(--text);outline:none;cursor:pointer;
+    }
+    .select:hover{ background:rgba(255,255,255,.10); }
+    .select option{ background:#0b1020;color:var(--text); }
+
+    .count-badge{flex:0 0 auto;white-space:nowrap}
+    .count-number{display:inline-block;min-width:3ch;text-align:right}
+
+    .auth-area{ position: relative; display:flex; align-items:center; gap:8px; }
+    .avatar-btn{
+      width: 36px; height: 36px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(255,255,255,.06); color: var(--text);
+      display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; font-weight:800;
+    }
+    .avatar-btn:hover{ background: rgba(255,255,255,.10); }
+    .avatar-btn img{ width:100%; height:100%; border-radius:999px; object-fit:cover; display:block; }
+    .auth-menu{
+      position:absolute; top: calc(100% + 10px); right: 0; width: 280px;
+      border:1px solid var(--border); border-radius:16px; background: rgba(0,0,0,.92);
+      box-shadow:0 18px 45px rgba(0,0,0,.45);
+      padding:12px; display:none; z-index:9999;
+    }
+    .auth-menu.show{ display:block; }
+    .auth-menu .line{ border-top:1px solid var(--border); margin:10px 0; }
+    .auth-menu .email{ font-size:13px; color: var(--text); word-break: break-all; }
+
+    /* Layout ficha */
+    .panel .row{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:18px; }
+    .panel .row[style*="align-items:flex-start"]{ display:flex; gap:12px; flex-wrap:wrap; }
+    @media (max-width: 980px){ .panel .row{ grid-template-columns: repeat(1, minmax(0, 1fr)); } }
+
+    input[disabled], textarea[disabled]{
+      opacity: 1 !important;
+      -webkit-text-fill-color: var(--text);
+      cursor: not-allowed;
+    }
+    .no-interaction{ pointer-events:none !important; }
+    .panel.view-mode .row[style*="align-items:flex-start"]{
+      display:flex !important; flex-direction: column; align-items:center; justify-content:center; gap:14px;
+    }
+    .panel.view-mode .row[style*="align-items:flex-start"] > div:first-child{
+      width:100%; display:flex; justify-content:center;
+    }
+    .panel.view-mode .row[style*="align-items:flex-start"] > .col{ width:100%; }
+    .panel.view-mode .row[style*="align-items:flex-start"] > .col .row{
+      display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:18px;
+    }
+    @media (max-width: 980px){
+      .panel.view-mode .row[style*="align-items:flex-start"] > .col .row{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div id="avisoContenedor" class="aviso-contenedor">
+    <div id="aviso" class="aviso">
+      <h3 id="avisoTitulo">Aviso</h3>
+      <p id="avisoMensaje"></p>
+      <div style="margin-top:18px;">
+        <button class="btn primary" id="avisoAceptar">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmContenedor" class="aviso-contenedor">
+    <div id="confirmBox" class="aviso">
+      <h3 id="confirmTitulo">Confirmar</h3>
+      <p id="confirmMensaje"></p>
+      <div style="margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn" id="confirmNo">Cancelar</button>
+        <button class="btn danger" id="confirmSi">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module">
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("/basedatoscel/sw.js", { scope: "/basedatoscel/" });
+        } catch (e) {
+          console.log("SW register error:", e);
+        }
+      });
+    }
+
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    // ✅ Storage seguro para iOS/PWA (evita fallos de localStorage en "cold start")
+const safeStorage = {
+  getItem: (key) => {
+    try { return window.localStorage.getItem(key); } catch { return null; }
+  },
+  setItem: (key, value) => {
+    try { window.localStorage.setItem(key, value); } catch {}
+  },
+  removeItem: (key) => {
+    try { window.localStorage.removeItem(key); } catch {}
+  },
+};
+
+
+    // ✅ MISMAS credenciales que tu app (publishable)
+    const SUPABASE_URL = "https://ggznwqocjvfawjmbtzda.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_sXfYr31mrDcwkgPDY9pWsQ_C6x1yRhc";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: safeStorage,          // ✅ usa el storage seguro
+    storageKey: "ipuc-miembros-auth", // ✅ clave fija (evita inconsistencias)
+  },
+});
+
+
+// ✅ Precalentar sesión antes del primer render (clave en PWA/iOS)
+await supabase.auth.getSession();
+
+    const app = document.getElementById("app");
+
+    // ===== UI helpers =====
+    function el(html){
+      const t=document.createElement("template");
+      t.innerHTML=html.trim();
+      return t.content.firstElementChild;
+    }
+
+    function toast(msg, kind="info"){
+      const cont = document.getElementById("toastContainer");
+      const node = document.createElement("div");
+      node.className = "toast " + (kind==="error"?"error":kind==="success"?"success":"info");
+      node.textContent = msg;
+      cont.appendChild(node);
+      setTimeout(()=>{ node.remove(); }, 3500);
+    }
+
+    function mostrarAviso(mensaje, tipo="info", titulo=null){
+      const cont = document.getElementById("avisoContenedor");
+      const tituloEl = document.getElementById("avisoTitulo");
+      const mensajeEl = document.getElementById("avisoMensaje");
+      tituloEl.textContent = titulo || (tipo==="success"?"¡Éxito!":tipo==="error"?"Error":tipo==="alerta"?"Atención":"Aviso");
+      mensajeEl.textContent = mensaje;
+      cont.classList.add("mostrar");
+    }
+    function cerrarAviso(){ document.getElementById("avisoContenedor").classList.remove("mostrar"); }
+    document.getElementById("avisoAceptar").addEventListener("click", cerrarAviso);
+
+    function confirmarHTML(mensaje, titulo="Confirmar"){
+      return new Promise((resolve)=>{
+        const cont = document.getElementById("confirmContenedor");
+        const tEl = document.getElementById("confirmTitulo");
+        const mEl = document.getElementById("confirmMensaje");
+        const btnNo = document.getElementById("confirmNo");
+        const btnSi = document.getElementById("confirmSi");
+
+        tEl.textContent = titulo || "Confirmar";
+        mEl.textContent = mensaje || "";
+
+        const cerrar = (valor) => {
+          cont.classList.remove("mostrar");
+          btnNo.onclick = null;
+          btnSi.onclick = null;
+          cont.onclick = null;
+          resolve(valor);
+        };
+
+        btnNo.onclick = () => cerrar(false);
+        btnSi.onclick = () => cerrar(true);
+        cont.onclick = (e) => { if (e.target === cont) cerrar(false); };
+
+        cont.classList.add("mostrar");
+      });
+    }
+
+    function normalizeEmail(email){ return String(email||"").trim().toLowerCase(); }
+
+    // ===== AUTH (Google via Supabase) =====
+ async function signInGoogle(){
+  const base = window.location.href.split("#")[0].split("?")[0].replace(/[^/]*$/, "");
+  const redirectTo = base + "index.html";
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        prompt: "select_account"
+      }
+    }
+  });
+
+  if (error) throw error;
+}
+
+
+    async function signOut(){
+      await supabase.auth.signOut();
+    }
+
+async function getAuthedUser(){
+  // iOS/PWA a veces tarda en restaurar storage en "cold start"
+  for (let i = 0; i < 3; i++){
+    const { data } = await supabase.auth.getSession();
+    const user = data?.session?.user || null;
+    if (user) return user;
+    await new Promise(r => setTimeout(r, 250)); // 250ms
+  }
+  return null;
+}
+
+
+    async function isEmailAllowed(email){
+      const e = normalizeEmail(email);
+      if (!e) return false;
+      const { data, error } = await supabase.from("allowed_emails").select("email");
+      if (error) throw new Error("allowed_emails: " + error.message);
+      const list = (data||[]).map(r=>normalizeEmail(r.email)).filter(Boolean);
+      return list.includes(e);
+    }
+
+    // ===== Storage helpers =====
+    function safeName(name){ return String(name||"").replace(/[^\w.\-]+/g,"_").slice(0,120); }
+
+    async function uploadFile(bucket, file, prefix){
+      if (!file) return { path:null, url:null };
+      const ext = (String(file.name||"").split(".").pop() || "bin").toLowerCase();
+      const fileName = `${prefix}_${Date.now()}_${safeName(file.name)}`;
+      const storagePath = `${prefix}/${fileName}.${ext}`;
+
+      const { error: upErr } = await supabase.storage.from(bucket).upload(storagePath, file, { upsert:true });
+      if (upErr) throw new Error("Upload error: " + upErr.message);
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+      return { path: storagePath, url: data?.publicUrl || null };
+    }
+
+    // ===== Members API (misma lógica que tu preload) =====
+    async function searchMembers(query){
+      const q = String(query||"").trim();
+      if (!q) return [];
+      const like = `%${q}%`;
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .or(`identification.ilike.${like},first_names.ilike.${like},last_names.ilike.${like}`)
+        .order("created_at", { ascending:false })
+        .limit(20);
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+
+    async function countMembers(category){
+      const cat = String(category||"todo").toLowerCase();
+      let q = supabase.from("members").select("id", { count:"exact", head:true });
+
+      switch (cat) {
+        case "todo": break;
+        case "damas": q = q.eq("gender", "Femenino"); break;
+        case "caballeros": q = q.eq("gender", "Masculino"); break;
+        case "jovenes": q = q.gte("age", 13).lte("age", 35); break;
+        case "adolescentes": q = q.gte("age", 12).lte("age", 17); break;
+        case "senoritas": q = q.eq("gender", "Femenino").gte("age", 12).lte("age", 18); break;
+        case "ninos": q = q.gte("age", 0).lte("age", 11); break;
+        case "simpatizantes": q = q.eq("is_sympathizer", true); break;
+        default: break;
+      }
+      const { count, error } = await q;
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    }
+
+    async function saveMember(member, photoFile, docFile){
+      const prefix = (member.identification || "unknown").trim() || "unknown";
+      let photo = { path:null, url:null };
+      let doc = { path:null, url:null };
+
+      if (photoFile) photo = await uploadFile("member-photos", photoFile, prefix);
+      if (docFile) doc = await uploadFile("member-docs", docFile, prefix);
+
+      const payload = {
+        first_names: member.first_names,
+        last_names: member.last_names,
+        identification: member.identification,
+        age: member.age ?? null,
+        gender: member.gender || null,
+        church_role: member.church_role || null,
+        address: member.address || null,
+        city: member.city || null,
+        birth_date: member.birth_date || null,
+        father_name: member.father_name || null,
+        mother_name: member.mother_name || null,
+        congregation_name: member.congregation_name || null,
+        conversion_time: member.conversion_time || null,
+        baptism_date: member.baptism_date || null,
+        holy_spirit_date: member.holy_spirit_date || null,
+        event_place: member.event_place || null,
+        officiant_pastor: member.officiant_pastor || null,
+        membership_date: member.membership_date || null,
+        membership_time: member.membership_time || null,
+        origin_place: member.origin_place || null,
+        less_than_6_months: !!member.less_than_6_months,
+        is_sympathizer: !!member.is_sympathizer,
+        observations: member.observations || null,
+        photo_path: photo.path,
+        photo_url: photo.url,
+        id_document_path: doc.path,
+        id_document_url: doc.url,
+      };
+
+      const { data, error } = await supabase.from("members").insert(payload).select("*").single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    async function updateMember(id, member, photoFile, docFile){
+      if (!id) throw new Error("ID requerido para actualizar");
+      const prefix = (member.identification || "unknown").trim() || "unknown";
+
+      let photo = { path: member.photo_path || null, url: member.photo_url || null };
+      let doc = { path: member.id_document_path || null, url: member.id_document_url || null };
+
+      if (photoFile) photo = await uploadFile("member-photos", photoFile, prefix);
+      if (docFile) doc = await uploadFile("member-docs", docFile, prefix);
+
+      const payload = {
+        first_names: member.first_names,
+        last_names: member.last_names,
+        identification: member.identification,
+        age: member.age ?? null,
+        gender: member.gender || null,
+        church_role: member.church_role || null,
+        address: member.address || null,
+        city: member.city || null,
+        birth_date: member.birth_date || null,
+        father_name: member.father_name || null,
+        mother_name: member.mother_name || null,
+        congregation_name: member.congregation_name || null,
+        conversion_time: member.conversion_time || null,
+        baptism_date: member.baptism_date || null,
+        holy_spirit_date: member.holy_spirit_date || null,
+        event_place: member.event_place || null,
+        officiant_pastor: member.officiant_pastor || null,
+        membership_date: member.membership_date || null,
+        membership_time: member.membership_time || null,
+        origin_place: member.origin_place || null,
+        less_than_6_months: !!member.less_than_6_months,
+        is_sympathizer: !!member.is_sympathizer,
+        observations: member.observations || null,
+        photo_path: photo.path,
+        photo_url: photo.url,
+        id_document_path: doc.path,
+        id_document_url: doc.url,
+      };
+
+      const { data, error } = await supabase.from("members").update(payload).eq("id", id).select("*").single();
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    async function deleteMember(id){
+      if (!id) throw new Error("ID requerido para eliminar");
+
+      const { data: row, error: fetchErr } = await supabase
+        .from("members")
+        .select("id, photo_path, id_document_path")
+        .eq("id", id)
+        .maybeSingle();
+      if (fetchErr) throw new Error("Error leyendo registro: " + fetchErr.message);
+      if (!row) throw new Error("No existe el registro (o RLS lo bloquea).");
+
+      if (row.photo_path){
+        const { error: e1 } = await supabase.storage.from("member-photos").remove([row.photo_path]);
+        if (e1) throw new Error("No se pudo borrar foto: " + e1.message);
+      }
+      if (row.id_document_path){
+        const { error: e2 } = await supabase.storage.from("member-docs").remove([row.id_document_path]);
+        if (e2) throw new Error("No se pudo borrar documento: " + e2.message);
+      }
+
+      const { data, error } = await supabase.from("members").delete().eq("id", id).select("*");
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) throw new Error("No se eliminó ningún registro (posible RLS/policy DELETE).");
+      return data[0];
+    }
+
+    // ===== App state =====
+    const state = {
+      route: "miembros",
+      results: [],
+      selectedId: null,
+      memberDraft: null,
+      viewMode: "edit",
+      category: "todo",
+      auth: { authed:false, email:"", photoUrl:"" }
+    };
+
+    function cloneMemberSafe(obj){
+      try { if (typeof structuredClone === "function") return structuredClone(obj); } catch {}
+      return Object.assign({}, obj);
+    }
+
+    function blankMember(){
+      return {
+        first_names: "", last_names: "", identification: "",
+        address: "", city: "", birth_date: "",
+        father_name: "", mother_name: "", congregation_name: "",
+        conversion_time: "", baptism_date: "", holy_spirit_date: "",
+        event_place: "", officiant_pastor: "",
+        membership_date: "", membership_time: "",
+        origin_place: "",
+        less_than_6_months: false,
+        is_sympathizer: false,
+        observations: "",
+        photo_file: null,
+        photo_preview_url: "",
+        id_document_file: null,
+        gender: "",
+        age: null,
+        church_role: ""
+      };
+    }
+
+    // ===== Header =====
+    function renderHeader(){
+      const node = el(`
+        <div class="header">
+          <div class="header-inner">
+            <div class="brand">
+              <div class="title">IPUC · Base de Datos</div>
+              <div class="small">PWA · Módulo Miembros</div>
+            </div>
+
+            <div class="nav">
+              <span class="badge">Solo Miembros</span>
+
+              <div class="auth-area" id="authArea">
+                <button class="btn" id="btnLogin" style="display:none;">Iniciar sesión</button>
+
+                <div id="avatarWrap" style="display:none;">
+                  <div class="avatar-btn" id="btnAvatar" title="Cuenta"></div>
+                  <div class="auth-menu" id="authMenu">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                      <div class="avatar-btn" id="menuAvatar" style="flex:0 0 auto;"></div>
+                      <div style="min-width:0;">
+                        <div class="muted">Sesión iniciada</div>
+                        <div class="email" id="menuEmail"></div>
+                      </div>
+                    </div>
+                    <div class="line"></div>
+                    <button class="btn danger" id="btnLogout" style="width:100%;">Cerrar sesión</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `);
+
+      const btnLogin = node.querySelector("#btnLogin");
+      const avatarWrap = node.querySelector("#avatarWrap");
+      const btnAvatar = node.querySelector("#btnAvatar");
+      const menu = node.querySelector("#authMenu");
+      const menuEmail = node.querySelector("#menuEmail");
+      const menuAvatar = node.querySelector("#menuAvatar");
+      const btnLogout = node.querySelector("#btnLogout");
+
+      function initialFromEmail(email){
+        const e = String(email || "").trim();
+        if (!e) return "G";
+        return e[0].toUpperCase();
+      }
+
+      function paintAuthFast(){
+        if (state.auth?.authed){
+          btnLogin.style.display = "none";
+          avatarWrap.style.display = "";
+
+          const letter = initialFromEmail(state.auth.email);
+          btnAvatar.innerHTML = "";
+          menuAvatar.innerHTML = "";
+
+          if (state.auth.photoUrl){
+            const img = document.createElement("img");
+            img.src = state.auth.photoUrl;
+            img.alt = "Cuenta";
+            btnAvatar.appendChild(img);
+
+            const img2 = document.createElement("img");
+            img2.src = state.auth.photoUrl;
+            img2.alt = "Cuenta";
+            menuAvatar.appendChild(img2);
+          } else {
+            btnAvatar.textContent = letter;
+            menuAvatar.textContent = letter;
+          }
+
+          menuEmail.textContent = state.auth.email || "";
+        } else {
+          menu.classList.remove("show");
+          avatarWrap.style.display = "none";
+          btnLogin.style.display = "";
+        }
+      }
+
+      btnAvatar?.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        menu.classList.toggle("show");
+      });
+      window.addEventListener("click", ()=> menu.classList.remove("show"));
+
+      btnLogin?.addEventListener("click", async ()=>{
+        try{
+          await signInGoogle();
+        } catch(e){
+          mostrarAviso("No se pudo iniciar sesión: " + (e?.message || e), "error", "Login");
+        }
+      });
+
+      btnLogout?.addEventListener("click", async ()=>{
+        try{
+          await signOut();
+          state.auth.authed = false;
+          state.auth.email = "";
+          state.auth.photoUrl = "";
+          paintAuthFast();
+          toast("✅ Sesión cerrada.", "success");
+          render();
+        } catch(e){
+          mostrarAviso("No se pudo cerrar sesión: " + (e?.message || e), "error", "Logout");
+        }
+      });
+
+      paintAuthFast();
+      return node;
+    }
+
+    // ===== Miembros view =====
+    function viewMiembros(){
+      if (!state.memberDraft) state.memberDraft = blankMember();
+
+      const node = el(`
+        <div class="container">
+          <div class="card">
+
+            <div class="row" style="align-items:center;justify-content:space-between;">
+              <div>
+                <h3 style="margin:0;">Módulo: Miembros</h3>
+
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                  <div class="small">Búsqueda y registro de miembros</div>
+
+                  <div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap;">
+                    <span class="small">Categorías</span>
+
+                    <select id="categoryFilter" class="select" style="min-width:240px; width:auto;">
+                      <option value="todo">Todo</option>
+                      <option value="damas">Damas Dorcas</option>
+                      <option value="caballeros">Caballeros</option>
+                      <option value="jovenes">Jóvenes</option>
+                      <option value="adolescentes">Adolescentes</option>
+                      <option value="senoritas">Señoritas</option>
+                      <option value="ninos">Niños</option>
+                      <option value="simpatizantes">Simpatizantes</option>
+                    </select>
+
+                    <span class="badge count-badge" id="memberCountBadge">
+                      Miembros: <b id="memberCount" class="count-number">0</b>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn ok" id="btnNew">+ Nuevo</button>
+                <button class="btn edit" id="btnEdit">Editar</button>
+                <button class="btn danger" id="btnDelete">Eliminar</button>
+                <button class="btn primary" id="btnSave">Guardar</button>
+              </div>
+            </div>
+
+            <hr class="sep" />
+
+            <div class="panel" style="margin-bottom:14px; position:relative;">
+              <label>Buscador (Nombre/Apellido o Identificación)</label>
+
+              <div class="searchbar">
+                <input id="searchBox" placeholder="Ej: Juan Pérez o 123456789" />
+                <div class="search-actions">
+                  <button class="btn primary" id="btnSearch">Buscar</button>
+                  <button class="btn" id="btnClearSearch">Limpiar</button>
+                </div>
+              </div>
+
+              <div class="suggestions" id="suggestions"></div>
+            </div>
+
+            <div class="row">
+              <div class="col">
+                <div class="panel">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                      <div class="small">Ficha del miembro</div>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="small">Folio #</span>
+                        <input id="folio_number" disabled style="width:140px; padding:8px 10px;" />
+                      </div>
+                    </div>
+                    <div class="badge" id="statusBadge">Sin guardar</div>
+                  </div>
+
+                  <hr class="sep" />
+
+                  <div class="row" style="align-items:flex-start;">
+                    <div style="flex:0 0 auto;">
+                      <div class="avatar" id="photoBox">
+                        <div class="small">Sin foto</div>
+                      </div>
+                      <div style="margin-top:10px;" class="filebox" id="photoFileBox">
+                        <label>Foto del miembro (JPG/PNG/WebP)</label>
+                        <input id="photoInput" type="file" accept="image/*" />
+                        <div class="hint" id="photoInfo">Se mostrará aquí como vista previa.</div>
+                      </div>
+                    </div>
+
+                    <div class="col">
+                      <div class="row">
+                        <div class="col">
+                          <label>Nombres *</label>
+                          <input id="first_names"  />
+                        </div>
+                        <div class="col">
+                          <label>Apellidos *</label>
+                          <input id="last_names" />
+                        </div>
+                        <div class="col">
+                          <label>Identificación *</label>
+                          <input id="identification" placeholder="Documento" />
+                        </div>
+                      </div>
+
+                      <div class="row" style="margin-top:10px;">
+                        <div class="col">
+                          <label>Dirección</label>
+                          <input id="address" />
+                        </div>
+                        <div class="col">
+                          <label>Ciudad</label>
+                          <input id="city" />
+                        </div>
+                        <div class="col">
+                          <label>Fecha de nacimiento</label>
+                          <input id="birth_date" type="date" />
+                        </div>
+                      </div>
+
+                      <div class="row" style="margin-top:10px;">
+                        <div class="col">
+                          <label>Edad *</label>
+                          <input id="age" type="number" min="0" />
+                        </div>
+
+                        <div class="col">
+                          <label>Género *</label>
+                          <select id="gender" class="select">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                          </select>
+                        </div>
+
+                        <div class="col">
+                          <label>Cargo en la iglesia</label>
+                          <input id="church_role" />
+                        </div>
+                      </div>
+
+                      <div class="row" style="margin-top:10px;">
+                        <div class="col">
+                          <label>Nombre del padre</label>
+                          <input id="father_name" />
+                        </div>
+                        <div class="col">
+                          <label>Nombre de la madre</label>
+                          <input id="mother_name" />
+                        </div>
+                        <div class="col">
+                          <label>Nombre de la congregación</label>
+                          <input id="congregation_name"/>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="sep" />
+
+                  <div class="row">
+                    <div class="col">
+                      <label>Tiempo de conversión</label>
+                      <input id="conversion_time" placeholder="Ej: 2 años / 6 meses" />
+                    </div>
+                    <div class="col">
+                      <label>Lugar bautismo/acto</label>
+                      <input id="event_place"/>
+                    </div>
+                  </div>
+
+                  <div class="row" style="margin-top:10px;">
+                    <div class="col">
+                      <label>Fecha del bautismo</label>
+                      <input id="baptism_date" type="date" />
+                    </div>
+                    <div class="col">
+                      <label>Fecha recepción Espíritu Santo</label>
+                      <input id="holy_spirit_date" type="date" />
+                    </div>
+                    <div class="col">
+                      <label>Pastor oficiante</label>
+                      <input id="officiant_pastor" />
+                    </div>
+                  </div>
+
+                  <div class="row" style="margin-top:10px;">
+                    <div class="col">
+                      <label>Fecha membresía en la congregación</label>
+                      <input id="membership_date" type="date" />
+                    </div>
+                    <div class="col">
+                      <label>Tiempo de membresía</label>
+                      <input id="membership_time" placeholder="Ej: 1 año / 4 meses" />
+                    </div>
+                    <div class="col">
+                      <label>Lugar de procedencia</label>
+                      <input id="origin_place" />
+                    </div>
+                  </div>
+
+                  <div class="row" style="margin-top:10px;align-items:center;">
+                    <div class="col">
+                      <label>¿Menos de 6 meses en la congregación?</label>
+                      <input id="less_than_6_months" type="checkbox" />
+                      <div class="hint">Activa si el miembro lleva menos de 6 meses.</div>
+                    </div>
+
+                    <div class="col">
+                      <label>Simpatizante</label>
+                      <input id="is_sympathizer" type="checkbox" />
+                      <div class="hint">Activa si la persona es simpatizante.</div>
+                    </div>
+
+                    <div class="col">
+                      <div class="filebox" id="docFileBox">
+                        <label>Documento de identificación (PDF/JPG/PNG/otros)</label>
+                        <input id="id_document" type="file" />
+                        <div class="hint" id="docInfo">Ningún archivo seleccionado.</div>
+                      </div>
+
+                      <div id="docExistingBox" class="filebox" style="margin-top:10px; display:none;">
+                        <label>Documento cargado</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                          <button class="btn" id="btnViewDoc">Ver</button>
+                          <button class="btn" id="btnDownloadDoc">Descargar</button>
+                          <span class="small muted" id="docExistingLabel"></span>
+                        </div>
+                        <div class="hint">* Se abre en tu navegador (no afecta el formulario).</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top:10px;">
+                    <label>Observaciones</label>
+                    <textarea id="observations" placeholder="Notas adicionales..."></textarea>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `);
+
+      const $ = (id) => {
+        const clean = String(id).startsWith("#") ? String(id).slice(1) : String(id);
+        return node.querySelector("#" + clean);
+      };
+
+      // keep category
+      const catSel = $("#categoryFilter");
+      if (catSel) catSel.value = state.category || "todo";
+
+      function setFormReadonly(isReadonly){
+        const panel = $("#statusBadge")?.closest(".panel");
+        if (panel) panel.classList.toggle("view-mode", isReadonly);
+
+        const textIds = [
+          "first_names","last_names","identification","address","city",
+          "father_name","mother_name","congregation_name",
+          "conversion_time","event_place","officiant_pastor",
+          "membership_time","origin_place","observations",
+          "age","church_role"
+        ];
+        const dateIds = ["birth_date","baptism_date","holy_spirit_date","membership_date"];
+
+        textIds.forEach(id=>{
+          const e = $(id); if (!e) return;
+          e.readOnly = isReadonly;
+          e.disabled = false;
+        });
+        dateIds.forEach(id=>{
+          const e = $(id); if (!e) return;
+          e.disabled = isReadonly;
+          e.classList.toggle("no-interaction", isReadonly);
+        });
+
+        const chk = $("#less_than_6_months"); if (chk) chk.disabled = isReadonly;
+        const sym = $("#is_sympathizer"); if (sym) sym.disabled = isReadonly;
+        const genderSel = $("#gender"); if (genderSel) genderSel.disabled = isReadonly;
+
+        const photoBox = $("#photoFileBox");
+        const docBox = $("#docFileBox");
+        if (photoBox) photoBox.style.display = isReadonly ? "none" : "";
+        if (docBox) docBox.style.display = isReadonly ? "none" : "";
+
+        if ($("#photoInput")) $("#photoInput").disabled = isReadonly;
+        if ($("#id_document")) $("#id_document").disabled = isReadonly;
+
+        node.querySelector("#btnSave").style.display = isReadonly ? "none" : "";
+        $("#statusBadge").textContent = isReadonly ? "Solo lectura" : "Sin guardar";
+      }
+
+      function syncActionButtons(){
+        const isViewing = state.viewMode === "view";
+        const hasSelected = !!state.selectedId;
+        node.querySelector("#btnEdit").style.display = (isViewing && hasSelected) ? "" : "none";
+        node.querySelector("#btnDelete").style.display = (isViewing && hasSelected) ? "" : "none";
+        node.querySelector("#btnSave").style.display = (state.viewMode === "edit") ? "" : "none";
+      }
+
+      function renderPhoto(url){
+        const box = $("#photoBox");
+        box.innerHTML = "";
+        if (!url){
+          box.appendChild(el(`<div class="small">Sin foto</div>`));
+          return;
+        }
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Foto miembro";
+        box.appendChild(img);
+      }
+
+      function renderDocInfo(file){
+        const info = $("#docInfo");
+        if (!file){
+          info.textContent = "Ningún archivo seleccionado.";
+          return;
+        }
+        const sizeKb = Math.round(file.size / 1024);
+        info.textContent = `${file.name} · ${sizeKb} KB`;
+      }
+
+      function renderExistingDoc(url){
+        const box = $("#docExistingBox");
+        const label = $("#docExistingLabel");
+        if (!box) return;
+
+        if (!url){
+          box.style.display = "none";
+          if (label) label.textContent = "";
+          box.dataset.url = "";
+          return;
+        }
+
+        box.style.display = "";
+        box.dataset.url = url;
+
+        try{
+          const u = new URL(url);
+          const filename = decodeURIComponent(u.pathname.split("/").pop() || "");
+          if (label) label.textContent = filename ? `Archivo: ${filename}` : "";
+        } catch {
+          if (label) label.textContent = "";
+        }
+      }
+
+      function fillForm(m){
+        $("#first_names").value = m.first_names || "";
+        $("#last_names").value = m.last_names || "";
+        $("#identification").value = m.identification || "";
+        $("#address").value = m.address || "";
+        $("#city").value = m.city || "";
+        $("#birth_date").value = m.birth_date || "";
+        $("#father_name").value = m.father_name || "";
+        $("#mother_name").value = m.mother_name || "";
+        $("#congregation_name").value = m.congregation_name || "";
+        $("#folio_number").value = m.folio_number || "";
+        $("#conversion_time").value = m.conversion_time || "";
+        $("#baptism_date").value = m.baptism_date || "";
+        $("#holy_spirit_date").value = m.holy_spirit_date || "";
+        $("#event_place").value = m.event_place || "";
+        $("#officiant_pastor").value = m.officiant_pastor || "";
+        $("#membership_date").value = m.membership_date || "";
+        $("#membership_time").value = m.membership_time || "";
+        $("#origin_place").value = m.origin_place || "";
+        $("#less_than_6_months").checked = !!m.less_than_6_months;
+        $("#is_sympathizer").checked = !!m.is_sympathizer;
+        $("#observations").value = m.observations || "";
+        $("#age").value = (m.age ?? "") === null ? "" : (m.age ?? "");
+        $("#church_role").value = m.church_role || "";
+        $("#gender").value = m.gender || "";
+
+        renderPhoto(m.photo_preview_url || m.photo_url || "");
+        renderDocInfo(m.id_document_file || null);
+        renderExistingDoc(m.id_document_url || "");
+      }
+
+      function readForm(){
+        const m = state.memberDraft;
+        m.first_names = $("#first_names").value.trim();
+        m.last_names = $("#last_names").value.trim();
+        m.identification = $("#identification").value.trim();
+        m.address = $("#address").value.trim();
+        m.city = $("#city").value.trim();
+        m.birth_date = $("#birth_date").value || "";
+        m.father_name = $("#father_name").value.trim();
+        m.mother_name = $("#mother_name").value.trim();
+        m.congregation_name = $("#congregation_name").value.trim();
+        m.folio_number = ($("#folio_number").value || "").trim();
+        m.conversion_time = $("#conversion_time").value.trim();
+        m.baptism_date = $("#baptism_date").value || "";
+        m.holy_spirit_date = $("#holy_spirit_date").value || "";
+        m.event_place = $("#event_place").value.trim();
+        m.officiant_pastor = $("#officiant_pastor").value.trim();
+        m.membership_date = $("#membership_date").value || "";
+        m.membership_time = $("#membership_time").value.trim();
+        m.origin_place = $("#origin_place").value.trim();
+        m.less_than_6_months = $("#less_than_6_months").checked;
+        m.is_sympathizer = $("#is_sympathizer").checked;
+        m.observations = $("#observations").value.trim();
+
+        const ageRaw = ($("#age").value || "").trim();
+        m.age = ageRaw === "" ? null : Number(ageRaw);
+
+        m.church_role = $("#church_role").value.trim();
+        m.gender = $("#gender").value || "";
+
+        return m;
+      }
+
+      async function updateMemberCount(){
+        const badge = $("#memberCount");
+        if (!badge) return;
+        try{
+          const total = await countMembers(getCategoriaActual());
+          badge.textContent = String(total ?? 0);
+        } catch(e){
+          badge.textContent = "--";
+          console.log("countMembers error:", e);
+        }
+      }
+
+      function getCategoriaActual(){
+        const v = ($("#categoryFilter")?.value || state.category || "todo");
+        return String(v).toLowerCase();
+      }
+
+      // Suggestions
+      $("#suggestions")?.addEventListener("mousedown", (e)=>e.preventDefault());
+      $("#suggestions")?.addEventListener("pointerdown", (e)=>e.preventDefault());
+
+      function renderSuggestions(items){
+        const box = $("#suggestions");
+        if (!box) return;
+        if (!items || items.length === 0){
+          box.style.display = "none";
+          box.innerHTML = "";
+          return;
+        }
+        box.style.display = "block";
+        box.innerHTML = "";
+
+        items.forEach((m)=>{
+          const item = el(`
+            <div class="item">
+              <div class="left">
+                <div style="font-weight:700;">${(m.first_names||"")} ${(m.last_names||"")}</div>
+                <div class="small">Doc: ${(m.identification||"")} · Ciudad: ${(m.city||"")}</div>
+              </div>
+              <div class="right">Seleccionar</div>
+            </div>
+          `);
+
+          const onPick = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            state.category = getCategoriaActual();
+
+            state.memberDraft = cloneMemberSafe(m);
+            state.memberDraft.photo_preview_url = m.photo_url || "";
+            state.selectedId = m.id || null;
+            state.viewMode = "view";
+
+            renderSuggestions([]);
+            render();
+          };
+
+          item.addEventListener("pointerdown", onPick);
+          item.addEventListener("mousedown", onPick);
+
+          box.appendChild(item);
+        });
+      }
+
+      function debounce(fn, wait=350){
+        let t=null;
+        return (...args)=>{
+          clearTimeout(t);
+          t=setTimeout(()=>fn(...args), wait);
+        };
+      }
+
+      const autoSearch = debounce(async ()=>{
+        try{
+          const q = ($("#searchBox").value || "").trim();
+          if (!q || q.length < 2){
+            renderSuggestions([]);
+            return;
+          }
+          const items = await searchMembers(q);
+          renderSuggestions(items);
+        } catch(e){
+          console.log("autoSearch error:", e);
+        }
+      }, 350);
+
+      // File inputs
+      $("#photoInput").addEventListener("change", ()=>{
+        const file = $("#photoInput").files && $("#photoInput").files[0] ? $("#photoInput").files[0] : null;
+        state.memberDraft.photo_file = file;
+
+        if (!file){
+          state.memberDraft.photo_preview_url = "";
+          renderPhoto("");
+          $("#photoInfo").textContent = "Se mostrará aquí como vista previa.";
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        state.memberDraft.photo_preview_url = url;
+        renderPhoto(url);
+        $("#photoInfo").textContent = `${file.name} · vista previa lista`;
+        $("#statusBadge").textContent = "Cambios sin guardar";
+      });
+
+      $("#id_document").addEventListener("change", ()=>{
+        const file = $("#id_document").files && $("#id_document").files[0] ? $("#id_document").files[0] : null;
+        state.memberDraft.id_document_file = file;
+        renderDocInfo(file);
+        $("#statusBadge").textContent = "Cambios sin guardar";
+      });
+
+      [
+        "first_names","last_names","identification","address","city","birth_date",
+        "father_name","mother_name","congregation_name","conversion_time",
+        "baptism_date","holy_spirit_date","event_place","officiant_pastor",
+        "membership_date","membership_time","origin_place","less_than_6_months","is_sympathizer","observations",
+        "age","gender","church_role"
+      ].forEach(id=>{
+        const e = $(id);
+        if (!e) return;
+        const markDirty = ()=> ($("#statusBadge").textContent = "Cambios sin guardar");
+        e.addEventListener("input", markDirty);
+        e.addEventListener("change", markDirty);
+      });
+
+      // View/download existing doc
+      $("#btnViewDoc")?.addEventListener("click", ()=>{
+        const url = $("#docExistingBox")?.dataset?.url || "";
+        if (!url) return;
+        window.open(url, "_blank");
+      });
+      $("#btnDownloadDoc")?.addEventListener("click", ()=>{
+        const url = $("#docExistingBox")?.dataset?.url || "";
+        if (!url) return;
+        const downloadUrl = url.includes("?") ? (url + "&download=1") : (url + "?download=1");
+        window.open(downloadUrl, "_blank");
+      });
+
+      // Buttons
+      $("#btnNew").addEventListener("click", ()=>{
+        state.memberDraft = blankMember();
+        state.selectedId = null;
+        state.viewMode = "edit";
+        render();
+      });
+
+      $("#btnEdit").addEventListener("click", ()=>{
+        if (!state.selectedId){
+          toast("⚠️ Selecciona un miembro primero.", "info");
+          return;
+        }
+        state.viewMode = "edit";
+        render();
+      });
+
+      $("#btnDelete").addEventListener("click", async ()=>{
+        try{
+          if (!state.selectedId){
+            toast("⚠️ Selecciona un miembro primero.", "info");
+            return;
+          }
+
+          const nombre = `${state.memberDraft?.first_names || ""} ${state.memberDraft?.last_names || ""}`.trim();
+          const ok = await confirmarHTML(
+            `¿Seguro que deseas eliminar a "${nombre || "este miembro"}"?\n\nEsta acción no se puede deshacer.`,
+            "Eliminar miembro"
+          );
+          if (!ok) return;
+
+          $("#statusBadge").textContent = "Eliminando...";
+          await deleteMember(state.selectedId);
+
+          toast("✅ Eliminado correctamente.", "success");
+
+          state.memberDraft = blankMember();
+          state.selectedId = null;
+          state.viewMode = "edit";
+          $("#statusBadge").textContent = "Sin guardar";
+
+          const sb = $("#searchBox");
+          if (sb) sb.value = "";
+          renderSuggestions([]);
+          updateMemberCount();
+
+          render();
+        } catch(e){
+          $("#statusBadge").textContent = "Error";
+          mostrarAviso("❌ Error eliminando: " + (e?.message || e), "error", "Eliminar");
+        }
+      });
+
+      $("#btnSave").addEventListener("click", async ()=>{
+        try{
+          const m = readForm();
+
+          if (!m.first_names || !m.last_names || !m.identification){
+            toast("Nombres, apellidos e identificación son obligatorios.", "info");
+            return;
+          }
+
+          const ageNum = Number(m.age);
+          if (m.age === null || !Number.isFinite(ageNum) || ageNum < 0){
+            toast("La edad es obligatoria y debe ser un número válido (>= 0).", "info");
+            return;
+          }
+
+          if (!m.gender){
+            toast("El género es obligatorio. Selecciona Masculino o Femenino.", "info");
+            return;
+          }
+
+          const photoFile = state.memberDraft.photo_file || null;
+          const docFile = state.memberDraft.id_document_file || null;
+
+          $("#statusBadge").textContent = "Guardando...";
+
+          if (state.selectedId){
+            await updateMember(state.selectedId, m, photoFile, docFile);
+            toast("✅ Cambios guardados correctamente.", "success");
+          } else {
+            await saveMember(m, photoFile, docFile);
+            toast("✅ Guardado correctamente.", "success");
+          }
+
+          $("#statusBadge").textContent = "Guardado";
+
+          setTimeout(()=>{
+            state.memberDraft = blankMember();
+            state.selectedId = null;
+            state.viewMode = "edit";
+
+            const sb = $("#searchBox");
+            if (sb) sb.value = "";
+            renderSuggestions([]);
+            updateMemberCount();
+
+            render();
+          }, 600);
+
+        } catch(err){
+          $("#statusBadge").textContent = "Error";
+          const raw = String(err?.message || err || "").toLowerCase();
+          const esDuplicado =
+            raw.includes("duplicate key") ||
+            raw.includes("unique constraint") ||
+            raw.includes("violates unique") ||
+            raw.includes("23505") ||
+            raw.includes("already exists") ||
+            raw.includes("ya existe");
+
+          if (esDuplicado){
+            mostrarAviso("⚠️ Ese documento de identificación ya está registrado. Revisa la búsqueda.", "alerta", "Documento duplicado");
+          } else {
+            mostrarAviso("❌ Error guardando: " + (err?.message || err), "error", "Guardar");
+          }
+        }
+      });
+
+      $("#btnSearch").addEventListener("click", async ()=>{
+        try{
+          const q = ($("#searchBox").value || "").trim();
+          const items = await searchMembers(q);
+          renderSuggestions(items);
+        } catch(e){
+          mostrarAviso("❌ Error buscando: " + (e?.message || e), "error", "Buscar");
+        }
+      });
+
+      $("#searchBox").addEventListener("input", ()=> autoSearch());
+
+      $("#categoryFilter")?.addEventListener("change", ()=>{
+        state.category = $("#categoryFilter").value;
+        updateMemberCount();
+        const q = ($("#searchBox")?.value || "").trim();
+        if (!q){ renderSuggestions([]); return; }
+        autoSearch();
+      });
+
+      $("#searchBox").addEventListener("keydown", (e)=>{
+        if (e.key === "Enter") $("#btnSearch").click();
+        if (e.key === "Escape"){
+          renderSuggestions([]);
+          e.target.blur();
+        }
+      });
+
+      $("#searchBox").addEventListener("blur", ()=>{
+        setTimeout(()=> renderSuggestions([]), 150);
+      });
+
+      $("#btnClearSearch").addEventListener("click", ()=>{
+        const sb = $("#searchBox");
+        sb.value = "";
+        renderSuggestions([]);
+        sb.focus();
+      });
+
+      fillForm(state.memberDraft);
+      setFormReadonly(state.viewMode === "view");
+      syncActionButtons();
+      updateMemberCount();
+
+      // Gate actions by auth
+      const enabled = !!state.auth.authed;
+      $("#btnSave").disabled = !enabled;
+      $("#btnDelete").disabled = !enabled;
+      $("#btnEdit").disabled = !enabled;
+      if (!enabled) $("#statusBadge").textContent = "Login requerido";
+
+      // focus
+      $("#searchBox")?.focus();
+
+      return node;
+    }
+
+    function render(){
+      app.innerHTML = "";
+      app.appendChild(renderHeader());
+      app.appendChild(viewMiembros());
+    }
+
+    // ===== Boot: handle session, allowed emails gate =====
+async function bootstrap(maybeUser = null){
+  // 1) Toma el user que venga del evento, o intenta restaurarlo
+  const user = maybeUser || await getAuthedUser();
+
+  if (!user){
+    state.auth.authed = false;
+    state.auth.email = "";
+    state.auth.photoUrl = "";
+    render();
+    return;
+  }
+
+  const email = user.email || "";
+  try{
+    const allowed = await isEmailAllowed(email);
+    if (!allowed){
+      await signOut();
+      state.auth.authed = false;
+      state.auth.email = "";
+      state.auth.photoUrl = "";
+      render();
+      mostrarAviso(
+        `El correo no tiene permiso para usar esta app:\n\n${email}`,
+        "alerta",
+        "Cuenta no autorizada"
+      );
+      return;
+    }
+
+    state.auth.authed = true;
+    state.auth.email = email;
+    state.auth.photoUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
+    render();
+    // OJO: esto se va a disparar también en INITIAL_SESSION, si no quieres toast al abrir:
+    // toast("✅ Sesión iniciada.", "success");
+  } catch(e){
+    state.auth.authed = false;
+    state.auth.email = "";
+    state.auth.photoUrl = "";
+    render();
+    mostrarAviso(
+      "No se pudo verificar el permiso del correo.\n\n" +
+      "Revisa las Policies (RLS) de la tabla allowed_emails para permitir SELECT a usuarios autenticados (o usa una función RPC).\n\n" +
+      (e?.message || e),
+      "error",
+      "Permisos"
+    );
+  }
+}
+
+
+ // 1) Render inicial (UI base)
+render();
+
+// 2) Auth state: aquí Supabase entrega la sesión ya restaurada (clave para iOS)
+supabase.auth.onAuthStateChange(async (event, session) => {
+  // Cuando la app abre "en frío", el evento INITIAL_SESSION es el que importa
+  if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+    await bootstrap(session?.user || null);
+  }
+  if (event === "SIGNED_OUT") {
+    state.auth.authed = false;
+    state.auth.email = "";
+    state.auth.photoUrl = "";
+    render();
+  }
+});
+
+// 3) Bootstrap inicial con retry (por si onAuthStateChange tarda)
+bootstrap(null);
+
+  </script>
+</body>
+</html>
