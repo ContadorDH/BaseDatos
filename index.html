@@ -575,36 +575,32 @@ function hideLoader(){
 }
 
 async function enablePushAndRegister() {
-  // 1) exige “login local” (tu sistema de allowed_emails)
   const ok = await requireAuth();
   if (!ok) return;
 
-  // 2) permiso notificaciones
   const perm = await Notification.requestPermission();
   if (perm !== "granted") {
     toast("Debes permitir notificaciones.", "info");
     return;
   }
 
-  // 3) obtener SW listo
   const reg = await navigator.serviceWorker.ready;
 
-  // 4) crear suscripción push
   const subscription = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
-  // 5) mandar a edge function
   const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, // ✅ FIX 401
     },
     body: JSON.stringify({
       subscription,
-      email: state.auth.email, // tu email local guardado
+      email: state.auth.email,
     }),
   });
 
@@ -612,8 +608,9 @@ async function enablePushAndRegister() {
   console.log("register-push:", res.status, data);
 
   if (res.ok) toast("✅ Notificaciones activadas.", "success");
-  else toast("❌ Error registrando push: " + (data?.message || res.status), "error");
+  else toast("❌ Error registrando push: " + (data?.error || data?.message || res.status), "error");
 }
+
 
 
     function mostrarAviso(mensaje, tipo="info", titulo=null){
