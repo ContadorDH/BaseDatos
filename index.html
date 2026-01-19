@@ -469,6 +469,9 @@ input[type="file"]::-webkit-file-upload-button{
     <h3>Iniciar sesión</h3>
     <p class="small muted" style="margin-top:-6px;">Ingresa tu correo autorizado</p>
 
+    <button class="btn ok" id="btnEnablePush" style="display:none;">🔔 Notificaciones</button>
+
+
     <div style="text-align:left; margin-top:14px;">
       <label>Correo *</label>
       <input id="loginEmail" type="email" placeholder="correo@dominio.com" autocomplete="email" />
@@ -490,7 +493,7 @@ input[type="file"]::-webkit-file-upload-button{
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
         try {
-          await navigator.serviceWorker.register("/basedatoscel/sw.js", { scope: "/basedatoscel/" });
+          await navigator.serviceWorker.register("./sw.js", { scope: "./" });
         } catch (e) {
           console.log("SW register error:", e);
         }
@@ -509,6 +512,9 @@ input[type="file"]::-webkit-file-upload-button{
     // ✅ MISMAS credenciales que tu app (publishable)
     const SUPABASE_URL = "https://ggznwqocjvfawjmbtzda.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_sXfYr31mrDcwkgPDY9pWsQ_C6x1yRhc";
+
+    const VAPID_PUBLIC_KEY = "BLKfN2YpJLuK42bpodT0IWoGDiTAYhVkrx3egRcWywqJ7IPH1SCpOLp8J5eXcDhBR6gfc4RckBfIoDQcyhEwZsg";
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: false,   // no usamos auth
@@ -558,6 +564,57 @@ function hideLoader(){
       cont.appendChild(node);
       setTimeout(()=>{ node.remove(); }, 3500);
     }
+
+    function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function enablePushAndRegister() {
+  // 1) exige “login local” (tu sistema de allowed_emails)
+  const ok = await requireAuth();
+  if (!ok) return;
+
+  // 2) permiso notificaciones
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") {
+    toast("Debes permitir notificaciones.", "info");
+    return;
+  }
+
+  // 3) obtener SW listo
+  const reg = await navigator.serviceWorker.ready;
+
+  // 4) crear suscripción push
+  const subscription = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+  });
+
+  // 5) mandar a edge function
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({
+      subscription,
+      email: state.auth.email, // tu email local guardado
+    }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  console.log("register-push:", res.status, data);
+
+  if (res.ok) toast("✅ Notificaciones activadas.", "success");
+  else toast("❌ Error registrando push: " + (data?.message || res.status), "error");
+}
+
 
     function mostrarAviso(mensaje, tipo="info", titulo=null){
       const cont = document.getElementById("avisoContenedor");
@@ -1070,6 +1127,7 @@ async function withAuthRetry(fn){
 
       function paintAuthFast(){
         if (state.auth?.authed){
+          btnEnablePush.style.display = ""; // mostrar si está logueado
           btnLogin.style.display = "none";
           avatarWrap.style.display = "";
 
@@ -1094,6 +1152,7 @@ async function withAuthRetry(fn){
 
           menuEmail.textContent = state.auth.email || "";
         } else {
+          btnEnablePush.style.display = ""; // mostrar si está logueado
           menu.classList.remove("show");
           avatarWrap.style.display = "none";
           btnLogin.style.display = "";
@@ -1108,6 +1167,14 @@ async function withAuthRetry(fn){
 
   btnLogin?.addEventListener("click", async ()=>{
   await loginWithEmailModal();
+
+  
+});
+const btnEnablePush = node.querySelector("#btnEnablePush");
+
+btnEnablePush?.addEventListener("click", async () => {
+  try { await enablePushAndRegister(); }
+  catch (e) { console.error(e); toast("Error activando push: " + (e?.message || e), "error"); }
 });
 
 
@@ -1892,4 +1959,3 @@ bootstrapLocalAuth();
   </script>
 </body>
 </html>
-
