@@ -617,30 +617,41 @@ async function sendBirthdayPushNow(){
     const ok = await requireAuth();
     if (!ok) return;
 
-    toast("📨 Enviando notificación de cumpleaños...", "info");
+    const reg = await navigator.serviceWorker.ready;
+    const subscription = await reg.pushManager.getSubscription();
+    if (!subscription){
+      toast("Primero activa 🔔 Notificaciones para este dispositivo.", "info");
+      return;
+    }
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push`, {
+    toast("📨 Enviando solo a ESTE teléfono…", "info");
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push-self`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY
+        "apikey": SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ manual: true })
+      body: JSON.stringify({
+        email: state.auth.email,
+        subscription, // 👈 la del MISMO dispositivo
+      }),
     });
 
     const data = await res.json().catch(()=> ({}));
-    console.log("send-birthday-push:", res.status, data);
+    console.log("send-birthday-push-self:", res.status, data);
 
     if (res.ok){
-      toast(`✅ Enviado. Cumples: ${data.birthdays || 0} · Push OK: ${data.sent || 0}`, "success");
+      toast(`✅ Enviado a este dispositivo. Cumples: ${data.birthdays || 0}`, "success");
     } else {
-      toast("❌ Error enviando: " + (data?.error || data?.message || res.status), "error");
+      toast("❌ Error: " + (data?.error || data?.message || res.status), "error");
     }
   } catch(e){
     console.error(e);
-    toast("❌ Error enviando push: " + (e?.message || e), "error");
+    toast("❌ Error enviando: " + (e?.message || e), "error");
   }
 }
+
 
 
 
