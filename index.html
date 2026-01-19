@@ -626,17 +626,19 @@ async function sendBirthdayPushNow(){
 
     toast("📨 Enviando solo a ESTE teléfono…", "info");
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push-self`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        email: state.auth.email,
-        subscription, // 👈 la del MISMO dispositivo
-      }),
-    });
+ const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push-self`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+  },
+  body: JSON.stringify({
+    email: state.auth.email,
+    subscription,
+  }),
+});
+
 
     const data = await res.json().catch(()=> ({}));
     console.log("send-birthday-push-self:", res.status, data);
