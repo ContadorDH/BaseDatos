@@ -591,18 +591,18 @@ async function enablePushAndRegister() {
     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_ANON_KEY,
-     
-    },
-    body: JSON.stringify({
-      subscription,
-      email: state.auth.email,
-    }),
-  });
+const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY
+  },
+  body: JSON.stringify({
+    subscription,
+    email: state.auth.email,
+  }),
+});
+
 
   const data = await res.json().catch(() => ({}));
   console.log("register-push:", res.status, data);
