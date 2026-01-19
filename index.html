@@ -644,34 +644,42 @@ async function loginWithEmailModal(){
     }
 
     safeStorage.setItem(AUTH_EMAIL_KEY, email);
-    state.auth.authed = true;
-    state.auth.email = email;
-    state.auth.photoUrl = "";
-    toast("✅ Sesión iniciada.", "success");
-    render();
-  } catch(e){
-    mostrarAviso("No se pudo verificar el permiso del correo.\n\n" + (e?.message || e), "error", "Permisos");
-  }
+   state.auth.authed = true;
+state.auth.ready = true;   // ✅ FIX
+state.auth.email = email;
+state.auth.photoUrl = "";
+toast("✅ Sesión iniciada.", "success");
+render();
+
+ } catch(e){
+  state.auth.ready = true;   // ✅ FIX
+  mostrarAviso("No se pudo verificar el permiso del correo.\n\n" + (e?.message || e), "error", "Permisos");
+}
+
 }
 
 async function logoutLocal(){
   safeStorage.removeItem(AUTH_EMAIL_KEY);
-  state.auth.authed = false;
-  state.auth.email = "";
-  state.auth.photoUrl = "";
-  toast("✅ Sesión cerrada.", "success");
-  render();
+ state.auth.authed = false;
+state.auth.ready = true;   // ✅ FIX (ya está “verificado”: no hay sesión)
+state.auth.email = "";
+state.auth.photoUrl = "";
+toast("✅ Sesión cerrada.", "success");
+render();
+
 }
 
 async function bootstrapLocalAuth(){
   const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
-  if (!saved){
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    render();
-    return;
-  }
+if (!saved){
+  state.auth.authed = false;
+  state.auth.ready = true;   // ✅ FIX
+  state.auth.email = "";
+  state.auth.photoUrl = "";
+  render();
+  return;
+}
+
 
   try{
     const allowed = await isEmailAllowed(saved);
@@ -685,17 +693,21 @@ async function bootstrapLocalAuth(){
       return;
     }
 
-    state.auth.authed = true;
-    state.auth.email = saved;
-    state.auth.photoUrl = "";
-    render();
-  } catch(e){
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    render();
-    mostrarAviso("No se pudo validar el correo guardado.\n\n" + (e?.message || e), "error", "Permisos");
-  }
+ state.auth.authed = true;
+state.auth.ready = true;   // ✅ FIX
+state.auth.email = saved;
+state.auth.photoUrl = "";
+render();
+
+} catch(e){
+  state.auth.ready = true;   // ✅ FIX
+  state.auth.authed = false;
+  state.auth.email = "";
+  state.auth.photoUrl = "";
+  render();
+  mostrarAviso("No se pudo validar el correo guardado.\n\n" + (e?.message || e), "error", "Permisos");
+}
+
 }
 
 
@@ -714,77 +726,48 @@ async function bootstrapLocalAuth(){
 
 async function requireAuth({ silent = false } = {}){
   try{
-    // ✅ Retry corto: evita falsos "sin sesión" en iOS/PWA cuando el token se está restaurando/refresh
-    let session = null;
-    let user = null;
+    // ✅ si ya estamos authed y listos, ok
+    if (state.auth.authed && state.auth.ready) return true;
 
-    for (let i = 0; i < 4; i++){
-     
-      if (error) throw error;
-
-      session = data?.session || null;
-      user = session?.user || null;
-
-      if (user) break;
-      await new Promise(r => setTimeout(r, 200)); // 200ms
-    }
-
-    if (!user){
+    // ✅ intenta levantar auth desde storage
+    const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
+    if (!saved){
       state.auth.authed = false;
+      state.auth.ready = true;
       state.auth.email = "";
       state.auth.photoUrl = "";
-      state.auth.allowedEmail = "";
-      state.auth.allowedOk = false;
-      state.auth.ready = true;
       render();
       if (!silent){
-        mostrarAviso("Tu sesión no está activa. Inicia sesión nuevamente.", "alerta", "Sesión requerida");
+        mostrarAviso("Debes iniciar sesión para usar esta función.", "alerta", "Login requerido");
       }
       return false;
     }
 
-    const email = user.email || "";
-
-    // 2) Validación allowed_emails con cache
-    const normalized = normalizeEmail(email);
-    const cacheHit = (state.auth.allowedEmail === normalized && state.auth.allowedOk === true);
-
-    if (!cacheHit){
-      const allowed = await isEmailAllowed(email);
-      if (!allowed){
-        await supabase.auth.signOut();
-        state.auth.authed = false;
-        state.auth.email = "";
-        state.auth.photoUrl = "";
-        state.auth.allowedEmail = "";
-        state.auth.allowedOk = false;
-        state.auth.ready = true;
-        render();
-        if (!silent){
-          mostrarAviso(
-            `El correo no tiene permiso para usar esta app:\n\n${email}`,
-            "alerta",
-            "Cuenta no autorizada"
-          );
-        }
-        return false;
+    // ✅ valida contra allowed_emails
+    const allowed = await isEmailAllowed(saved);
+    if (!allowed){
+      safeStorage.removeItem(AUTH_EMAIL_KEY);
+      state.auth.authed = false;
+      state.auth.ready = true;
+      state.auth.email = "";
+      state.auth.photoUrl = "";
+      render();
+      if (!silent){
+        mostrarAviso(`El correo ya no está autorizado:\n\n${saved}`, "alerta", "Cuenta no autorizada");
       }
-
-      state.auth.allowedEmail = normalized;
-      state.auth.allowedOk = true;
+      return false;
     }
 
-    // 3) Sesión OK → sincroniza estado UI
+    // ✅ sesión local ok
     state.auth.authed = true;
-    state.auth.email = email;
-    state.auth.photoUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
     state.auth.ready = true;
-
+    state.auth.email = saved;
+    state.auth.photoUrl = "";
     return true;
 
   } catch(e){
-    state.auth.ready = true;
     state.auth.authed = false;
+    state.auth.ready = true;
     render();
     if (!silent){
       mostrarAviso("No se pudo verificar la sesión.\n\n" + (e?.message || e), "error", "Sesión");
@@ -792,6 +775,7 @@ async function requireAuth({ silent = false } = {}){
     return false;
   }
 }
+
 
 
 
@@ -1908,3 +1892,4 @@ bootstrapLocalAuth();
   </script>
 </body>
 </html>
+
