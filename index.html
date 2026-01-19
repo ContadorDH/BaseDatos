@@ -509,18 +509,15 @@ input[type="file"]::-webkit-file-upload-button{
     // ✅ MISMAS credenciales que tu app (publishable)
     const SUPABASE_URL = "https://ggznwqocjvfawjmbtzda.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_sXfYr31mrDcwkgPDY9pWsQ_C6x1yRhc";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        storage: safeStorage,             // ✅ usa el storage seguro
-        storageKey: "ipuc-miembros-auth",  // ✅ clave fija (evita inconsistencias)
-      },
-    });
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false,   // no usamos auth
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storage: safeStorage,
+  },
+});
 
-    // ✅ Precalentar sesión antes del primer render (clave en PWA/iOS)
-    await supabase.auth.getSession();
 
     const app = document.getElementById("app");
 
@@ -702,36 +699,9 @@ async function bootstrapLocalAuth(){
 }
 
 
-    // ===== AUTH (Google via Supabase) =====
-    async function signInGoogle(){
-      const base = window.location.href.split("#")[0].split("?")[0].replace(/[^/]*$/, "");
-      const redirectTo = base + "index.html";
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-          queryParams: { prompt: "select_account" }
-        }
-      });
 
-      if (error) throw error;
-    }
 
-    async function signOut(){
-      await supabase.auth.signOut();
-    }
-
-    async function getAuthedUser(){
-      // iOS/PWA a veces tarda en restaurar storage en "cold start"
-      for (let i = 0; i < 3; i++){
-        const { data } = await supabase.auth.getSession();
-        const user = data?.session?.user || null;
-        if (user) return user;
-        await new Promise(r => setTimeout(r, 250)); // 250ms
-      }
-      return null;
-    }
 
     async function isEmailAllowed(email){
       const e = normalizeEmail(email);
@@ -749,7 +719,7 @@ async function requireAuth({ silent = false } = {}){
     let user = null;
 
     for (let i = 0; i < 4; i++){
-      const { data, error } = await supabase.auth.getSession();
+     
       if (error) throw error;
 
       session = data?.session || null;
