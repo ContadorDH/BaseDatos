@@ -612,6 +612,37 @@ const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
 }
 
 
+async function sendBirthdayPushNow(){
+  try{
+    const ok = await requireAuth();
+    if (!ok) return;
+
+    toast("📨 Enviando notificación de cumpleaños...", "info");
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ manual: true })
+    });
+
+    const data = await res.json().catch(()=> ({}));
+    console.log("send-birthday-push:", res.status, data);
+
+    if (res.ok){
+      toast(`✅ Enviado. Cumples: ${data.birthdays || 0} · Push OK: ${data.sent || 0}`, "success");
+    } else {
+      toast("❌ Error enviando: " + (data?.error || data?.message || res.status), "error");
+    }
+  } catch(e){
+    console.error(e);
+    toast("❌ Error enviando push: " + (e?.message || e), "error");
+  }
+}
+
+
 
     function mostrarAviso(mensaje, tipo="info", titulo=null){
       const cont = document.getElementById("avisoContenedor");
@@ -1159,24 +1190,6 @@ function paintAuthFast(){
   }
 }
 
-      async function sendBirthdayNow(){
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_ANON_KEY,
-      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify({ manual: true }),
-  });
-
-  const data = await res.json().catch(()=> ({}));
-  console.log("send-birthday-push:", res.status, data);
-
-  if (res.ok) toast(`✅ Enviado. Cumples: ${data.birthdays} · push OK: ${data.sent}`, "success");
-  else toast("❌ Error enviando: " + (data?.error || data?.message || res.status), "error");
-}
-
 
       btnAvatar?.addEventListener("click", (e)=>{
         e.stopPropagation();
@@ -1247,8 +1260,12 @@ function viewMiembros(){
   <button class="btn ok" id="btnNew">+ Nuevo</button>
   <button class="btn edit" id="btnEdit">Editar</button>
   <button class="btn danger" id="btnDelete">Eliminar</button>
+
+  <button class="btn" id="btnSendBirthday">🎂 Cumpleaños</button>
+
   <button class="btn primary" id="btnSave">Guardar</button>
 </div>
+
 </div>
 
 <hr class="sep" />
@@ -1724,6 +1741,12 @@ if (looksLikeAuthError(e)){
     state.viewMode = "edit";
     render();
   });
+
+$("#btnSendBirthday")?.addEventListener("click", async ()=>{
+  await sendBirthdayPushNow();
+});
+
+
 
 $("#btnEdit").addEventListener("click", async ()=>{
   const okAuth = await requireAuth();
