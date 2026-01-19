@@ -287,6 +287,25 @@
     </div>
   </div>
 
+  <div id="loginContenedor" class="aviso-contenedor">
+  <div class="aviso">
+    <h3>Iniciar sesión</h3>
+    <p class="small muted" style="margin-top:-6px;">Ingresa tu correo autorizado</p>
+
+    <div style="text-align:left; margin-top:14px;">
+      <label>Correo *</label>
+      <input id="loginEmail" type="email" placeholder="correo@dominio.com" autocomplete="email" />
+      <div class="hint">Se validará contra allowed_emails en Supabase.</div>
+    </div>
+
+    <div style="margin-top:18px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn" id="btnLoginCancel">Cancelar</button>
+      <button class="btn primary" id="btnLoginOk">Entrar</button>
+    </div>
+  </div>
+</div>
+
+
   <div id="app"></div>
 
   <script type="module">
@@ -390,6 +409,106 @@ await supabase.auth.getSession();
     }
 
     function normalizeEmail(email){ return String(email||"").trim().toLowerCase(); }
+
+    const AUTH_EMAIL_KEY = "ipuc-miembros-email";
+
+function openLoginModal(){
+  const cont = document.getElementById("loginContenedor");
+  const input = document.getElementById("loginEmail");
+  const btnOk = document.getElementById("btnLoginOk");
+  const btnCancel = document.getElementById("btnLoginCancel");
+
+  return new Promise((resolve) => {
+    const close = (value) => {
+      cont.classList.remove("mostrar");
+      btnOk.onclick = null;
+      btnCancel.onclick = null;
+      cont.onclick = null;
+      resolve(value);
+    };
+
+    input.value = "";
+    cont.classList.add("mostrar");
+    setTimeout(()=> input.focus(), 50);
+
+    btnCancel.onclick = () => close(null);
+    btnOk.onclick = () => close(normalizeEmail(input.value));
+
+    cont.onclick = (e) => { if (e.target === cont) close(null); };
+
+    input.onkeydown = (e) => {
+      if (e.key === "Enter") btnOk.click();
+      if (e.key === "Escape") btnCancel.click();
+    };
+  });
+}
+
+async function loginWithEmailModal(){
+  const email = await openLoginModal();
+  if (!email) return;
+
+  try{
+    const allowed = await isEmailAllowed(email);
+    if (!allowed){
+      mostrarAviso(`El correo no tiene permiso para usar esta app:\n\n${email}`, "alerta", "Cuenta no autorizada");
+      return;
+    }
+
+    safeStorage.setItem(AUTH_EMAIL_KEY, email);
+    state.auth.authed = true;
+    state.auth.email = email;
+    state.auth.photoUrl = "";
+    toast("✅ Sesión iniciada.", "success");
+    render();
+  } catch(e){
+    mostrarAviso("No se pudo verificar el permiso del correo.\n\n" + (e?.message || e), "error", "Permisos");
+  }
+}
+
+async function logoutLocal(){
+  safeStorage.removeItem(AUTH_EMAIL_KEY);
+  state.auth.authed = false;
+  state.auth.email = "";
+  state.auth.photoUrl = "";
+  toast("✅ Sesión cerrada.", "success");
+  render();
+}
+
+async function bootstrapLocalAuth(){
+  const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
+  if (!saved){
+    state.auth.authed = false;
+    state.auth.email = "";
+    state.auth.photoUrl = "";
+    render();
+    return;
+  }
+
+  try{
+    const allowed = await isEmailAllowed(saved);
+    if (!allowed){
+      safeStorage.removeItem(AUTH_EMAIL_KEY);
+      state.auth.authed = false;
+      state.auth.email = "";
+      state.auth.photoUrl = "";
+      render();
+      mostrarAviso(`El correo ya no está autorizado:\n\n${saved}`, "alerta", "Cuenta no autorizada");
+      return;
+    }
+
+    state.auth.authed = true;
+    state.auth.email = saved;
+    state.auth.photoUrl = "";
+    render();
+  } catch(e){
+    state.auth.authed = false;
+    state.auth.email = "";
+    state.auth.photoUrl = "";
+    render();
+    mostrarAviso("No se pudo validar el correo guardado.\n\n" + (e?.message || e), "error", "Permisos");
+  }
+}
+
 
     // ===== AUTH (Google via Supabase) =====
  async function signInGoogle(){
@@ -503,6 +622,7 @@ async function getAuthedUser(){
         church_role: member.church_role || null,
         address: member.address || null,
         city: member.city || null,
+        phone: member.phone || null,
         birth_date: member.birth_date || null,
         father_name: member.father_name || null,
         mother_name: member.mother_name || null,
@@ -548,6 +668,7 @@ async function getAuthedUser(){
         church_role: member.church_role || null,
         address: member.address || null,
         city: member.city || null,
+        phone: member.phone || null,
         birth_date: member.birth_date || null,
         father_name: member.father_name || null,
         mother_name: member.mother_name || null,
@@ -617,24 +738,26 @@ async function getAuthedUser(){
     }
 
     function blankMember(){
-      return {
-        first_names: "", last_names: "", identification: "",
-        address: "", city: "", birth_date: "",
-        father_name: "", mother_name: "", congregation_name: "",
-        conversion_time: "", baptism_date: "", holy_spirit_date: "",
-        event_place: "", officiant_pastor: "",
-        membership_date: "", membership_time: "",
-        origin_place: "",
-        less_than_6_months: false,
-        is_sympathizer: false,
-        observations: "",
-        photo_file: null,
-        photo_preview_url: "",
-        id_document_file: null,
-        gender: "",
-        age: null,
-        church_role: ""
-      };
+    return {
+  first_names: "", last_names: "", identification: "",
+  address: "", city: "", birth_date: "",
+  phone: "",
+  father_name: "", mother_name: "", congregation_name: "",
+  conversion_time: "", baptism_date: "", holy_spirit_date: "",
+  event_place: "", officiant_pastor: "",
+  membership_date: "", membership_time: "",
+  origin_place: "",
+  less_than_6_months: false,
+  is_sympathizer: false,
+  observations: "",
+  photo_file: null,
+  photo_preview_url: "",
+  id_document_file: null,
+  gender: "",
+  age: null,
+  church_role: ""
+};
+
     }
 
     // ===== Header =====
@@ -726,27 +849,15 @@ async function getAuthedUser(){
       });
       window.addEventListener("click", ()=> menu.classList.remove("show"));
 
-      btnLogin?.addEventListener("click", async ()=>{
-        try{
-          await signInGoogle();
-        } catch(e){
-          mostrarAviso("No se pudo iniciar sesión: " + (e?.message || e), "error", "Login");
-        }
-      });
+btnLogin?.addEventListener("click", async ()=>{
+  await loginWithEmailModal();
+});
 
-      btnLogout?.addEventListener("click", async ()=>{
-        try{
-          await signOut();
-          state.auth.authed = false;
-          state.auth.email = "";
-          state.auth.photoUrl = "";
-          paintAuthFast();
-          toast("✅ Sesión cerrada.", "success");
-          render();
-        } catch(e){
-          mostrarAviso("No se pudo cerrar sesión: " + (e?.message || e), "error", "Logout");
-        }
-      });
+
+btnLogout?.addEventListener("click", async ()=>{
+  await logoutLocal();
+});
+
 
       paintAuthFast();
       return node;
@@ -870,6 +981,15 @@ async function getAuthedUser(){
                           <input id="birth_date" type="date" />
                         </div>
                       </div>
+
+
+                      <div class="row" style="margin-top:10px;">
+  <div class="col">
+    <label>Teléfono</label>
+    <input id="phone" placeholder="Ej: 3001234567" inputmode="tel" />
+  </div>
+</div>
+
 
                       <div class="row" style="margin-top:10px;">
                         <div class="col">
@@ -1011,7 +1131,7 @@ async function getAuthedUser(){
         if (panel) panel.classList.toggle("view-mode", isReadonly);
 
         const textIds = [
-          "first_names","last_names","identification","address","city",
+"first_names","last_names","identification","address","city","phone",
           "father_name","mother_name","congregation_name",
           "conversion_time","event_place","officiant_pastor",
           "membership_time","origin_place","observations",
@@ -1107,6 +1227,7 @@ async function getAuthedUser(){
         $("#identification").value = m.identification || "";
         $("#address").value = m.address || "";
         $("#city").value = m.city || "";
+        $("#phone").value = m.phone || "";
         $("#birth_date").value = m.birth_date || "";
         $("#father_name").value = m.father_name || "";
         $("#mother_name").value = m.mother_name || "";
@@ -1139,6 +1260,7 @@ async function getAuthedUser(){
         m.identification = $("#identification").value.trim();
         m.address = $("#address").value.trim();
         m.city = $("#city").value.trim();
+        m.phone = ($("#phone")?.value || "").trim();
         m.birth_date = $("#birth_date").value || "";
         m.father_name = $("#father_name").value.trim();
         m.mother_name = $("#mother_name").value.trim();
@@ -1278,7 +1400,7 @@ async function getAuthedUser(){
       });
 
       [
-        "first_names","last_names","identification","address","city","birth_date",
+        "first_names","last_names","identification","address","city","phone","birth_date",
         "father_name","mother_name","congregation_name","conversion_time",
         "baptism_date","holy_spirit_date","event_place","officiant_pastor",
         "membership_date","membership_time","origin_place","less_than_6_months","is_sympathizer","observations",
@@ -1487,78 +1609,11 @@ async function getAuthedUser(){
       app.appendChild(viewMiembros());
     }
 
-    // ===== Boot: handle session, allowed emails gate =====
-async function bootstrap(maybeUser = null){
-  // 1) Toma el user que venga del evento, o intenta restaurarlo
-  const user = maybeUser || await getAuthedUser();
+// ===== Boot: local email auth (sin Google) =====
+bootstrapLocalAuth();
 
-  if (!user){
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    render();
-    return;
-  }
-
-  const email = user.email || "";
-  try{
-    const allowed = await isEmailAllowed(email);
-    if (!allowed){
-      await signOut();
-      state.auth.authed = false;
-      state.auth.email = "";
-      state.auth.photoUrl = "";
-      render();
-      mostrarAviso(
-        `El correo no tiene permiso para usar esta app:\n\n${email}`,
-        "alerta",
-        "Cuenta no autorizada"
-      );
-      return;
-    }
-
-    state.auth.authed = true;
-    state.auth.email = email;
-    state.auth.photoUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
-    render();
-    // OJO: esto se va a disparar también en INITIAL_SESSION, si no quieres toast al abrir:
-    // toast("✅ Sesión iniciada.", "success");
-  } catch(e){
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    render();
-    mostrarAviso(
-      "No se pudo verificar el permiso del correo.\n\n" +
-      "Revisa las Policies (RLS) de la tabla allowed_emails para permitir SELECT a usuarios autenticados (o usa una función RPC).\n\n" +
-      (e?.message || e),
-      "error",
-      "Permisos"
-    );
-  }
-}
-
-
- // 1) Render inicial (UI base)
-render();
-
-// 2) Auth state: aquí Supabase entrega la sesión ya restaurada (clave para iOS)
-supabase.auth.onAuthStateChange(async (event, session) => {
-  // Cuando la app abre "en frío", el evento INITIAL_SESSION es el que importa
-  if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-    await bootstrap(session?.user || null);
-  }
-  if (event === "SIGNED_OUT") {
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    render();
-  }
-});
-
-// 3) Bootstrap inicial con retry (por si onAuthStateChange tarda)
-bootstrap(null);
 
   </script>
 </body>
+
 </html>
