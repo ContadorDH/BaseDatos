@@ -1085,7 +1085,7 @@ async function withAuthRetry(fn){
               <span class="badge">Solo Miembros</span>
 
               <div class="auth-area" id="authArea">
-                 <button class="btn ok" id="btnEnablePush" style="display:none;">🔔 Notificaciones</button>
+                 <button class="btn ok" id="btnEnablePush" style="display:none;">🔔</button>
                 <button class="btn" id="btnLogin" style="display:none;">Iniciar sesión</button>
 
                 <div id="avatarWrap" style="display:none;">
@@ -1157,6 +1157,24 @@ function paintAuthFast(){
     avatarWrap.style.display = "none";
     btnLogin.style.display = "";
   }
+}
+
+      async function sendBirthdayNow(){
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ manual: true }),
+  });
+
+  const data = await res.json().catch(()=> ({}));
+  console.log("send-birthday-push:", res.status, data);
+
+  if (res.ok) toast(`✅ Enviado. Cumples: ${data.birthdays} · push OK: ${data.sent}`, "success");
+  else toast("❌ Error enviando: " + (data?.error || data?.message || res.status), "error");
 }
 
 
