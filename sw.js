@@ -1,4 +1,5 @@
-// /basedatoscel/sw.js
+// /BaseDatos/sw.js
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -7,37 +8,41 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// ✅ Fetch handler requerido por Chrome para "installability"
-// ❌ No usamos caches.open ni caches.match => NO persistencia
+// requerido por Chrome para "installability"
 self.addEventListener("fetch", (event) => {
-  // passthrough: que todo vaya a la red
+  // passthrough
 });
 
+// ✅ AQUÍ lo importante: recibir push y mostrar notificación
 self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch {}
 
   const title = data.title || "🎂 Cumpleaños";
+  const body  = data.body  || "Hoy hay cumpleaños.";
+  const url   = data.url   || "/BaseDatos/";
+
   const options = {
-    body: data.body || "Hoy hay un cumpleaños",
-    icon: "./icono-192.png",
-    badge: "./icono-192.png",
-    data: data.data || {},
+    body,
+    icon: "/BaseDatos/icons/icon-192.png",
+    badge: "/BaseDatos/icons/icon-192.png",
+    data: { url },
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// ✅ click en notificación => abrir la app
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const url = event.notification.data?.url || "/BaseDatos/";
+
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      // Si ya hay una pestaña abierta, la enfocamos
-      for (const client of clients) {
-        if ("focus" in client) return client.focus();
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("/BaseDatos/") && "focus" in client) return client.focus();
       }
-      // Si no hay, abrimos la app
-      if (self.clients.openWindow) return self.clients.openWindow("./");
+      if (clients.openWindow) return clients.openWindow(url);
     })
   );
 });
