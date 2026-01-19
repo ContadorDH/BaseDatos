@@ -485,6 +485,51 @@ input[type="file"]::-webkit-file-upload-button{
   </div>
 </div>
 
+<!-- ✅ Modal Cumpleaños por Mes (PWA) -->
+<div id="cumplePwaContenedor" class="aviso-contenedor">
+  <div class="aviso" style="width:760px; max-width:96%; text-align:left;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <h3 style="margin:0;">🎂 Cumpleaños por mes</h3>
+
+        <select id="cumplePwaMesSelect" class="select" style="min-width:180px; width:auto;">
+          <option value="0">Enero</option>
+          <option value="1">Febrero</option>
+          <option value="2">Marzo</option>
+          <option value="3">Abril</option>
+          <option value="4">Mayo</option>
+          <option value="5">Junio</option>
+          <option value="6">Julio</option>
+          <option value="7">Agosto</option>
+          <option value="8">Septiembre</option>
+          <option value="9">Octubre</option>
+          <option value="10">Noviembre</option>
+          <option value="11">Diciembre</option>
+        </select>
+
+        <span class="badge" id="cumplePwaCount">0</span>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <!-- (Opcional) manda push solo a ESTE teléfono -->
+        <button class="btn ok" id="btnCumplePwaPushSelf">🔔 Enviar a este teléfono</button>
+
+        <button class="btn" id="btnCumplePwaClose">Cerrar</button>
+      </div>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="panel">
+      <div class="small muted" id="cumplePwaSub">Cargando…</div>
+      <div id="cumplePwaList" style="margin-top:10px;"></div>
+
+      <div class="hint" style="margin-top:10px;">
+        * Solo muestra miembros con <b>fecha de nacimiento</b> registrada.
+      </div>
+    </div>
+  </div>
+</div>
 
 
   <div id="app"></div>
@@ -564,6 +609,127 @@ function hideLoader(){
       cont.appendChild(node);
       setTimeout(()=>{ node.remove(); }, 3500);
     }
+
+// ===================== CUMPLEAÑOS POR MES (PWA) =====================
+const MESES_TXT = [
+  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+];
+
+function openCumplePwaModal(){
+  const cont = document.getElementById("cumplePwaContenedor");
+  const sel  = document.getElementById("cumplePwaMesSelect");
+  if (!cont || !sel) return;
+
+  // mes actual por defecto
+  sel.value = String(new Date().getMonth());
+  cont.classList.add("mostrar");
+
+  // cargar lista
+  cargarCumplePwaMes(Number(sel.value));
+}
+
+function closeCumplePwaModal(){
+  document.getElementById("cumplePwaContenedor")?.classList.remove("mostrar");
+}
+
+function fmtDiaMes(yyyyMMdd){
+  const s = String(yyyyMMdd || "");
+  // esperado "YYYY-MM-DD"
+  if (s.length < 10) return "";
+  const mm = s.slice(5,7);
+  const dd = s.slice(8,10);
+  return `${dd}/${mm}`;
+}
+
+async function cargarCumplePwaMes(mesIndex){
+  const sub = document.getElementById("cumplePwaSub");
+  const list = document.getElementById("cumplePwaList");
+  const count = document.getElementById("cumplePwaCount");
+  if (!sub || !list || !count) return;
+
+  list.innerHTML = "";
+  sub.textContent = "Verificando sesión…";
+
+  const ok = await requireAuth();
+  if (!ok){
+    sub.textContent = "Login requerido para ver cumpleaños.";
+    count.textContent = "0";
+    return;
+  }
+
+  sub.textContent = `Cargando cumpleaños de ${MESES_TXT[mesIndex]}…`;
+
+  // Trae solo campos necesarios (evita peso)
+  const { data, error } = await supabase
+    .from("members")
+    .select("id, first_names, last_names, birth_date, city, phone")
+    .not("birth_date", "is", null)
+    .limit(5000);
+
+  if (error){
+    sub.textContent = "Error cargando cumpleaños.";
+    toast("❌ Cumpleaños: " + error.message, "error");
+    count.textContent = "0";
+    return;
+  }
+
+  const items = (data || []).filter(m => {
+    const d = String(m.birth_date || "");
+    if (d.length < 10) return false;
+    const mm = Number(d.slice(5,7)) - 1; // 0..11
+    return mm === Number(mesIndex);
+  });
+
+  // ordenar por día del mes
+  items.sort((a,b)=>{
+    const da = Number(String(a.birth_date).slice(8,10));
+    const db = Number(String(b.birth_date).slice(8,10));
+    return da - db;
+  });
+
+  count.textContent = String(items.length);
+  sub.textContent = items.length
+    ? `Hay ${items.length} cumpleaños en ${MESES_TXT[mesIndex]}.`
+    : `No hay cumpleaños en ${MESES_TXT[mesIndex]}.`;
+
+  if (items.length === 0){
+    list.innerHTML = `<div class="small muted">🎉 No hay cumpleaños registrados para este mes.</div>`;
+    return;
+  }
+
+  // Render lista simple (sin afectar nada más)
+  const wrap = document.createElement("div");
+  wrap.style.display = "grid";
+  wrap.style.gap = "10px";
+
+  for (const m of items){
+    const nombre = `${m.first_names || ""} ${m.last_names || ""}`.trim();
+    const dia = fmtDiaMes(m.birth_date);
+    const ciudad = (m.city || "").trim();
+    const tel = (m.phone || "").trim();
+
+    const row = document.createElement("div");
+    row.className = "panel";
+    row.style.padding = "12px";
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <div style="font-weight:800;">${nombre || "(Sin nombre)"}</div>
+          <div class="small muted">
+            ${dia ? "🎂 " + dia : ""}${ciudad ? " · " + ciudad : ""}${tel ? " · 📞 " + tel : ""}
+          </div>
+        </div>
+        <span class="badge">${dia || "--/--"}</span>
+      </div>
+    `;
+    wrap.appendChild(row);
+  }
+
+  list.appendChild(wrap);
+}
+
+
 
     function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -766,6 +932,8 @@ toast("✅ Sesión cerrada.", "success");
 render();
 
 }
+
+
 
 async function bootstrapLocalAuth(){
   const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
@@ -1128,6 +1296,9 @@ async function withAuthRetry(fn){
             <div class="nav">
               <span class="badge">Solo Miembros</span>
 
+<button class="btn ok" id="btnCumplePwaOpen">🎂 Cumpleaños</button>
+
+
               <div class="auth-area" id="authArea">
                  <button class="btn ok" id="btnEnablePush" style="display:none;">🔔</button>
                 <button class="btn" id="btnLogin" style="display:none;">Iniciar sesión</button>
@@ -1202,6 +1373,13 @@ function paintAuthFast(){
     btnLogin.style.display = "";
   }
 }
+
+
+// ✅ abrir modal cumpleaños
+const btnCumplePwaOpen = node.querySelector("#btnCumplePwaOpen");
+btnCumplePwaOpen?.addEventListener("click", () => {
+  try { openCumplePwaModal(); } catch (e) { console.error(e); }
+});
 
 
       btnAvatar?.addEventListener("click", (e)=>{
@@ -2010,6 +2188,19 @@ async function handleAppResume(){
     
   // ===== Boot: local email auth (sin Google) =====
 bootstrapLocalAuth();
+
+// ===== Cumpleaños modal handlers =====
+document.getElementById("btnCumplePwaClose")?.addEventListener("click", closeCumplePwaModal);
+
+document.getElementById("cumplePwaContenedor")?.addEventListener("click", (e) => {
+  if (e.target === document.getElementById("cumplePwaContenedor")) closeCumplePwaModal();
+});
+
+document.getElementById("cumplePwaMesSelect")?.addEventListener("change", (e) => {
+  const v = Number(e.target.value);
+  cargarCumplePwaMes(v);
+});
+
 
   </script>
 </body>
