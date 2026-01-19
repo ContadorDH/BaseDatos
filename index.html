@@ -469,7 +469,7 @@ input[type="file"]::-webkit-file-upload-button{
     <h3>Iniciar sesión</h3>
     <p class="small muted" style="margin-top:-6px;">Ingresa tu correo autorizado</p>
 
-    <button class="btn ok" id="btnEnablePush" style="display:none;">🔔 Notificaciones</button>
+   
 
 
     <div style="text-align:left; margin-top:14px;">
@@ -1088,6 +1088,7 @@ async function withAuthRetry(fn){
               <span class="badge">Solo Miembros</span>
 
               <div class="auth-area" id="authArea">
+                 <button class="btn ok" id="btnEnablePush" style="display:none;">🔔 Notificaciones</button>
                 <button class="btn" id="btnLogin" style="display:none;">Iniciar sesión</button>
 
                 <div id="avatarWrap" style="display:none;">
@@ -1124,40 +1125,43 @@ async function withAuthRetry(fn){
         if (!e) return "G";
         return e[0].toUpperCase();
       }
+function paintAuthFast(){
+  // ✅ protege por si btnEnablePush no existe (evita que se caiga la app)
+  const hasPushBtn = !!btnEnablePush;
 
-      function paintAuthFast(){
-        if (state.auth?.authed){
-          btnEnablePush.style.display = ""; // mostrar si está logueado
-          btnLogin.style.display = "none";
-          avatarWrap.style.display = "";
+  if (state.auth?.authed){
+    if (hasPushBtn) btnEnablePush.style.display = ""; // ✅ mostrar si está logueado
+    btnLogin.style.display = "none";
+    avatarWrap.style.display = "";
 
-          const letter = initialFromEmail(state.auth.email);
-          btnAvatar.innerHTML = "";
-          menuAvatar.innerHTML = "";
+    const letter = initialFromEmail(state.auth.email);
+    btnAvatar.innerHTML = "";
+    menuAvatar.innerHTML = "";
 
-          if (state.auth.photoUrl){
-            const img = document.createElement("img");
-            img.src = state.auth.photoUrl;
-            img.alt = "Cuenta";
-            btnAvatar.appendChild(img);
+    if (state.auth.photoUrl){
+      const img = document.createElement("img");
+      img.src = state.auth.photoUrl;
+      img.alt = "Cuenta";
+      btnAvatar.appendChild(img);
 
-            const img2 = document.createElement("img");
-            img2.src = state.auth.photoUrl;
-            img2.alt = "Cuenta";
-            menuAvatar.appendChild(img2);
-          } else {
-            btnAvatar.textContent = letter;
-            menuAvatar.textContent = letter;
-          }
+      const img2 = document.createElement("img");
+      img2.src = state.auth.photoUrl;
+      img2.alt = "Cuenta";
+      menuAvatar.appendChild(img2);
+    } else {
+      btnAvatar.textContent = letter;
+      menuAvatar.textContent = letter;
+    }
 
-          menuEmail.textContent = state.auth.email || "";
-        } else {
-          btnEnablePush.style.display = ""; // mostrar si está logueado
-          menu.classList.remove("show");
-          avatarWrap.style.display = "none";
-          btnLogin.style.display = "";
-        }
-      }
+    menuEmail.textContent = state.auth.email || "";
+  } else {
+    if (hasPushBtn) btnEnablePush.style.display = "none"; // ✅ ocultar si NO está logueado
+    menu.classList.remove("show");
+    avatarWrap.style.display = "none";
+    btnLogin.style.display = "";
+  }
+}
+
 
       btnAvatar?.addEventListener("click", (e)=>{
         e.stopPropagation();
