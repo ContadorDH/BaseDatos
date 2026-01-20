@@ -2189,6 +2189,39 @@ async function handleAppResume(){
   // ===== Boot: local email auth (sin Google) =====
 bootstrapLocalAuth();
 
+// ✅ Cumpleaños Modal: botón "Enviar a este teléfono"
+document.getElementById("btnCumplePwaPushSelf")?.addEventListener("click", async () => {
+  try{
+    const ok = await requireAuth();
+    if (!ok) return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const subscription = await reg.pushManager.getSubscription();
+    if (!subscription){
+      toast("Primero activa 🔔 Notificaciones para este dispositivo.", "info");
+      return;
+    }
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-birthday-push-self`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ email: state.auth.email, subscription })
+    });
+
+    const data = await res.json().catch(()=> ({}));
+    if (res.ok) toast("✅ Enviado a este teléfono.", "success");
+    else toast("❌ Error: " + (data?.error || data?.message || res.status), "error");
+  } catch(e){
+    console.error(e);
+    toast("❌ Error enviando: " + (e?.message || e), "error");
+  }
+});
+
+
+
 // ===== Cumpleaños modal handlers =====
 document.getElementById("btnCumplePwaClose")?.addEventListener("click", closeCumplePwaModal);
 
