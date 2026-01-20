@@ -839,10 +839,12 @@ const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
     "Content-Type": "application/json",
     "apikey": SUPABASE_ANON_KEY
   },
-  body: JSON.stringify({
-    subscription,
-    email: state.auth.email,
-  }),
+body: JSON.stringify({
+  subscription,
+  email: state.auth.email,
+  church_role: (document.getElementById("church_role")?.value || "").trim(),
+}),
+
 });
 
 
