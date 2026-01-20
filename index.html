@@ -199,7 +199,7 @@
       position: fixed; top:0; left:0; right:0; bottom:0;
       background: rgba(0,0,0,0.5);
       display:flex; justify-content:center; align-items:center;
-      z-index: 9999999; opacity:0; visibility:hidden; transition: all .3s ease;
+      z-index: 99999; opacity:0; visibility:hidden; transition: all .3s ease;
       backdrop-filter: blur(4px);
       padding: 16px; overflow:auto;
     }
@@ -423,6 +423,10 @@ input[type="file"]::-webkit-file-upload-button{
 .loader-title{ font-weight: 800; }
 .loader-sub{ font-size: 12px; color: var(--muted); }
 
+#avisoContenedor,
+#confirmContenedor{
+  z-index: 9999999 !important;
+}
 
 
     
@@ -610,6 +614,51 @@ function hideLoader(){
       setTimeout(()=>{ node.remove(); }, 3500);
     }
 
+
+
+function normalizePhoneToE164CO(raw){
+  // Convierte teléfonos colombianos comunes a +57XXXXXXXXXX
+  let p = String(raw || "").trim();
+
+  // quitar espacios, guiones, paréntesis
+  p = p.replace(/[^\d+]/g, "");
+
+  if (!p) return "";
+
+  // si ya viene con +, asumimos E.164
+  if (p.startsWith("+")) return p;
+
+  // quitar ceros iniciales raros
+  p = p.replace(/^0+/, "");
+
+  // si tiene 10 dígitos (celular CO típico), agregar +57
+  if (/^\d{10}$/.test(p)) return `+57${p}`;
+
+  // si viene 57 + 10 dígitos
+  if (/^57\d{10}$/.test(p)) return `+${p}`;
+
+  // si viene 9 o menos, lo dejamos como está (no adivinamos)
+  return p;
+}
+
+function openWhatsApp(phoneRaw, message){
+  const phone = normalizePhoneToE164CO(phoneRaw);
+  if (!phone || phone.length < 8){
+    toast("Este miembro no tiene teléfono válido.", "info");
+    return;
+  }
+
+  const text = encodeURIComponent(String(message || ""));
+  const num = phone.replace("+", ""); // wa.me requiere sin +
+  const url = `https://wa.me/${num}?text=${text}`;
+
+  // abre WhatsApp / WhatsApp Web
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+
+
+
 // ===================== CUMPLEAÑOS POR MES (PWA) =====================
 const MESES_TXT = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -712,17 +761,44 @@ async function cargarCumplePwaMes(mesIndex){
     const row = document.createElement("div");
     row.className = "panel";
     row.style.padding = "12px";
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-        <div style="min-width:0;">
-          <div style="font-weight:800;">${nombre || "(Sin nombre)"}</div>
-          <div class="small muted">
-            ${dia ? "🎂 " + dia : ""}${ciudad ? " · " + ciudad : ""}${tel ? " · 📞 " + tel : ""}
-          </div>
-        </div>
-        <span class="badge">${dia || "--/--"}</span>
+const waId = `btnWaCumple_${m.id}`;
+
+row.innerHTML = `
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+    <div style="min-width:0;">
+      <div style="font-weight:800;">${nombre || "(Sin nombre)"}</div>
+      <div class="small muted">
+        ${dia ? "🎂 " + dia : ""}${ciudad ? " · " + ciudad : ""}${tel ? " · 📞 " + tel : ""}
       </div>
-    `;
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="btn ok" id="${waId}" style="padding:8px 10px;">💬 WhatsApp</button>
+      <span class="badge">${dia || "--/--"}</span>
+    </div>
+  </div>
+`;
+
+// listener WhatsApp (solo si hay teléfono)
+setTimeout(() => {
+  const btn = row.querySelector(`#${waId}`);
+  if (!btn) return;
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const msg = `Hola ${nombre || ""} 😊 ¡Feliz cumpleaños! 🎂🎉\nDios te bendiga.`;
+    openWhatsApp(m.phone || "", msg);
+  });
+
+  if (!String(m.phone || "").trim()){
+    btn.disabled = true;
+    btn.title = "Este miembro no tiene teléfono";
+    btn.style.opacity = "0.6";
+  }
+}, 0);
+
     wrap.appendChild(row);
   }
 
