@@ -473,12 +473,7 @@ input[type="file"]::-webkit-file-upload-button{
     <h3>Iniciar sesión</h3>
     <p class="small muted" style="margin-top:-6px;">Ingresa tu correo autorizado</p>
 
-   <div style="text-align:left; margin-top:14px;">
-  <label>Cargo / Rol (para notificaciones)</label>
-  <input id="loginRole" placeholder="Ej: líder dorcas, líder jóvenes, caballeros..." />
-  <div class="hint">Se usa para enviarte avisos personalizados por tu área.</div>
-</div>
-
+   
 
 
     <div style="text-align:left; margin-top:14px;">
@@ -844,13 +839,10 @@ const res = await fetch(`${SUPABASE_URL}/functions/v1/register-push`, {
     "Content-Type": "application/json",
     "apikey": SUPABASE_ANON_KEY
   },
-body: JSON.stringify({
-  subscription,
-  email: state.auth.email,
-  notify_role: String(state.auth.notify_role || "").trim(), // ✅ rol del usuario receptor
-}),
-
-
+  body: JSON.stringify({
+    subscription,
+    email: state.auth.email,
+  }),
 });
 
 
@@ -947,14 +939,11 @@ async function sendBirthdayPushNow(){
 
     function normalizeEmail(email){ return String(email||"").trim().toLowerCase(); }
 
-const AUTH_EMAIL_KEY = "ipuc-miembros-email";
-const AUTH_ROLE_KEY  = "ipuc-miembros-notify-role";
-    
+    const AUTH_EMAIL_KEY = "ipuc-miembros-email";
 
 function openLoginModal(){
   const cont = document.getElementById("loginContenedor");
   const input = document.getElementById("loginEmail");
-  const roleInput = document.getElementById("loginRole"); // ✅ nuevo
   const btnOk = document.getElementById("btnLoginOk");
   const btnCancel = document.getElementById("btnLoginCancel");
 
@@ -968,17 +957,11 @@ function openLoginModal(){
     };
 
     input.value = "";
-    if (roleInput) roleInput.value = ""; // ✅ limpia rol
     cont.classList.add("mostrar");
     setTimeout(()=> input.focus(), 50);
 
     btnCancel.onclick = () => close(null);
-
-    // ✅ ahora devuelve {email, notify_role}
-    btnOk.onclick = () => close({
-      email: normalizeEmail(input.value),
-      notify_role: String(roleInput?.value || "").trim()
-    });
+    btnOk.onclick = () => close(normalizeEmail(input.value));
 
     cont.onclick = (e) => { if (e.target === cont) close(null); };
 
@@ -986,24 +969,12 @@ function openLoginModal(){
       if (e.key === "Enter") btnOk.click();
       if (e.key === "Escape") btnCancel.click();
     };
-
-    // ✅ Enter también desde rol
-    if (roleInput){
-      roleInput.onkeydown = (e) => {
-        if (e.key === "Enter") btnOk.click();
-        if (e.key === "Escape") btnCancel.click();
-      };
-    }
   });
 }
 
-
 async function loginWithEmailModal(){
-  const login = await openLoginModal();
-  if (!login?.email) return;
-
-  const email = normalizeEmail(login.email);
-  const notify_role = String(login.notify_role || "").trim();
+  const email = await openLoginModal();
+  if (!email) return;
 
   try{
     const allowed = await isEmailAllowed(email);
@@ -1012,91 +983,73 @@ async function loginWithEmailModal(){
       return;
     }
 
-    // ✅ guarda email + rol
     safeStorage.setItem(AUTH_EMAIL_KEY, email);
-    safeStorage.setItem(AUTH_ROLE_KEY, notify_role);
+   state.auth.authed = true;
+state.auth.ready = true;   // ✅ FIX
+state.auth.email = email;
+state.auth.photoUrl = "";
+toast("✅ Sesión iniciada.", "success");
+render();
 
-    state.auth.authed = true;
-    state.auth.ready = true;
-    state.auth.email = email;
-    state.auth.photoUrl = "";
-    state.auth.notify_role = notify_role; // ✅ nuevo
-
-    toast("✅ Sesión iniciada.", "success");
-    render();
-
-  } catch(e){
-    state.auth.ready = true;
-    mostrarAviso("No se pudo verificar el permiso del correo.\n\n" + (e?.message || e), "error", "Permisos");
-  }
+ } catch(e){
+  state.auth.ready = true;   // ✅ FIX
+  mostrarAviso("No se pudo verificar el permiso del correo.\n\n" + (e?.message || e), "error", "Permisos");
 }
 
+}
 
 async function logoutLocal(){
   safeStorage.removeItem(AUTH_EMAIL_KEY);
-  safeStorage.removeItem(AUTH_ROLE_KEY); // ✅ nuevo
+ state.auth.authed = false;
+state.auth.ready = true;   // ✅ FIX (ya está “verificado”: no hay sesión)
+state.auth.email = "";
+state.auth.photoUrl = "";
+toast("✅ Sesión cerrada.", "success");
+render();
 
-  state.auth.authed = false;
-  state.auth.ready = true;
-  state.auth.email = "";
-  state.auth.photoUrl = "";
-  state.auth.notify_role = ""; // ✅ nuevo
-
-  toast("✅ Sesión cerrada.", "success");
-  render();
 }
-
 
 
 
 async function bootstrapLocalAuth(){
   const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
-  const savedRole = String(safeStorage.getItem(AUTH_ROLE_KEY) || "").trim(); // ✅ nuevo
+if (!saved){
+  state.auth.authed = false;
+  state.auth.ready = true;   // ✅ FIX
+  state.auth.email = "";
+  state.auth.photoUrl = "";
+  render();
+  return;
+}
 
-  if (!saved){
-    state.auth.authed = false;
-    state.auth.ready = true;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    state.auth.notify_role = ""; // ✅ nuevo
-    render();
-    return;
-  }
 
   try{
     const allowed = await isEmailAllowed(saved);
     if (!allowed){
       safeStorage.removeItem(AUTH_EMAIL_KEY);
-      safeStorage.removeItem(AUTH_ROLE_KEY);
-
       state.auth.authed = false;
-      state.auth.ready = true;
       state.auth.email = "";
       state.auth.photoUrl = "";
-      state.auth.notify_role = "";
       render();
-
       mostrarAviso(`El correo ya no está autorizado:\n\n${saved}`, "alerta", "Cuenta no autorizada");
       return;
     }
 
-    state.auth.authed = true;
-    state.auth.ready = true;
-    state.auth.email = saved;
-    state.auth.photoUrl = "";
-    state.auth.notify_role = savedRole; // ✅ nuevo
-    render();
+ state.auth.authed = true;
+state.auth.ready = true;   // ✅ FIX
+state.auth.email = saved;
+state.auth.photoUrl = "";
+render();
 
-  } catch(e){
-    state.auth.ready = true;
-    state.auth.authed = false;
-    state.auth.email = "";
-    state.auth.photoUrl = "";
-    state.auth.notify_role = "";
-    render();
+} catch(e){
+  state.auth.ready = true;   // ✅ FIX
+  state.auth.authed = false;
+  state.auth.email = "";
+  state.auth.photoUrl = "";
+  render();
+  mostrarAviso("No se pudo validar el correo guardado.\n\n" + (e?.message || e), "error", "Permisos");
+}
 
-    mostrarAviso("No se pudo validar el correo guardado.\n\n" + (e?.message || e), "error", "Permisos");
-  }
 }
 
 
@@ -1115,56 +1068,49 @@ async function bootstrapLocalAuth(){
 
 async function requireAuth({ silent = false } = {}){
   try{
+    // ✅ si ya estamos authed y listos, ok
     if (state.auth.authed && state.auth.ready) return true;
 
+    // ✅ intenta levantar auth desde storage
     const saved = normalizeEmail(safeStorage.getItem(AUTH_EMAIL_KEY));
-    const savedRole = String(safeStorage.getItem(AUTH_ROLE_KEY) || "").trim(); // ✅ nuevo
-
     if (!saved){
       state.auth.authed = false;
       state.auth.ready = true;
       state.auth.email = "";
       state.auth.photoUrl = "";
-      state.auth.notify_role = ""; // ✅ nuevo
       render();
-
       if (!silent){
         mostrarAviso("Debes iniciar sesión para usar esta función.", "alerta", "Login requerido");
       }
       return false;
     }
 
+    // ✅ valida contra allowed_emails
     const allowed = await isEmailAllowed(saved);
     if (!allowed){
       safeStorage.removeItem(AUTH_EMAIL_KEY);
-      safeStorage.removeItem(AUTH_ROLE_KEY);
-
       state.auth.authed = false;
       state.auth.ready = true;
       state.auth.email = "";
       state.auth.photoUrl = "";
-      state.auth.notify_role = "";
       render();
-
       if (!silent){
         mostrarAviso(`El correo ya no está autorizado:\n\n${saved}`, "alerta", "Cuenta no autorizada");
       }
       return false;
     }
 
+    // ✅ sesión local ok
     state.auth.authed = true;
     state.auth.ready = true;
     state.auth.email = saved;
     state.auth.photoUrl = "";
-    state.auth.notify_role = savedRole; // ✅ nuevo
     return true;
 
   } catch(e){
     state.auth.authed = false;
     state.auth.ready = true;
-    state.auth.notify_role = "";
     render();
-
     if (!silent){
       mostrarAviso("No se pudo verificar la sesión.\n\n" + (e?.message || e), "error", "Sesión");
     }
@@ -1374,16 +1320,14 @@ async function withAuthRetry(fn){
       memberDraft: null,
       viewMode: "edit",
       category: "todo",
-auth: {
+     auth: {
   authed: false,
-  ready: false,
+  ready: false,          // ✅ indica si la sesión ya fue verificada
   email: "",
   photoUrl: "",
-  notify_role: "",     // ✅ nuevo
-  allowedEmail: "",
-  allowedOk: false
+  allowedEmail: "",      // ✅ cache del email validado en allowed_emails
+  allowedOk: false       // ✅ cache del resultado allowed
 }
-
 
     };
 
