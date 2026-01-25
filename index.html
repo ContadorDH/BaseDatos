@@ -1632,9 +1632,21 @@ function viewMiembros(){
                     <div class="small">Sin foto</div>
                   </div>
                   <div style="margin-top:10px;" class="filebox" id="photoFileBox">
-                    <label>Foto del miembro (JPG/PNG/WebP)</label>
-                    <input id="photoInput" type="file" accept="image/*" />
-                    <div class="hint" id="photoInfo">Se mostrará aquí como vista previa.</div>
+              <label>Foto del miembro (JPG/PNG/WebP)</label>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+  <button class="btn ok" type="button" id="btnTakePhoto">📷 Tomar foto</button>
+  <button class="btn" type="button" id="btnPickPhoto">🖼️ Elegir archivo</button>
+</div>
+
+<!-- ✅ Cámara (Android): abre cámara -->
+<input id="photoInputCamera" type="file" accept="image/*" capture="environment" style="display:none;" />
+
+<!-- ✅ Archivo (galería/archivos): el que ya tenías -->
+<input id="photoInput" type="file" accept="image/*" style="display:none;" />
+
+<div class="hint" id="photoInfo">Se mostrará aquí como vista previa.</div>
+
                   </div>
                 </div>
 
@@ -2027,22 +2039,39 @@ if (looksLikeAuthError(e)){
   }, 350);
 
   // File inputs
-  $("#photoInput").addEventListener("change", ()=>{
-    const file = $("#photoInput").files && $("#photoInput").files[0] ? $("#photoInput").files[0] : null;
-    state.memberDraft.photo_file = file;
+// File inputs (Archivo + Cámara)
+function handlePickedPhoto(file){
+  state.memberDraft.photo_file = file;
 
-    if (!file){
-      state.memberDraft.photo_preview_url = "";
-      renderPhoto("");
-      $("#photoInfo").textContent = "Se mostrará aquí como vista previa.";
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    state.memberDraft.photo_preview_url = url;
-    renderPhoto(url);
-    $("#photoInfo").textContent = `${file.name} · vista previa lista`;
-    $("#statusBadge").textContent = "Cambios sin guardar";
-  });
+  if (!file){
+    state.memberDraft.photo_preview_url = "";
+    renderPhoto("");
+    $("#photoInfo").textContent = "Se mostrará aquí como vista previa.";
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  state.memberDraft.photo_preview_url = url;
+  renderPhoto(url);
+  $("#photoInfo").textContent = `${file.name} · vista previa lista`;
+  $("#statusBadge").textContent = "Cambios sin guardar";
+}
+
+// ✅ Archivo (galería/archivos)
+$("#photoInput").addEventListener("change", ()=>{
+  const file = $("#photoInput").files?.[0] || null;
+  handlePickedPhoto(file);
+});
+
+// ✅ Cámara (Android)
+$("#photoInputCamera").addEventListener("change", ()=>{
+  const file = $("#photoInputCamera").files?.[0] || null;
+  handlePickedPhoto(file);
+});
+
+// ✅ Botones para abrir el selector correcto
+$("#btnPickPhoto").addEventListener("click", ()=> $("#photoInput").click());
+$("#btnTakePhoto").addEventListener("click", ()=> $("#photoInputCamera").click());
+
 
   [
     "first_names","last_names","identification","address","city","phone","birth_date",
