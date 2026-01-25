@@ -1,19 +1,25 @@
 // /BaseDatos/sw.js
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    // Por si en alguna versión anterior se usó cache, lo limpiamos
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+
+    await self.clients.claim();
+  })());
 });
 
 // requerido por Chrome para "installability"
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", () => {
   // passthrough
 });
 
-// ✅ AQUÍ lo importante: recibir push y mostrar notificación
+// ✅ recibir push y mostrar notificación
 self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch {}
@@ -24,8 +30,9 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body,
-    icon: "/BaseDatos/icons/icon-192.png",
-    badge: "/BaseDatos/icons/icon-192.png",
+    // ✅ usa los iconos reales que tienes en /BaseDatos/
+    icon: "/BaseDatos/icono-192.png",
+    badge: "/BaseDatos/icono-192.png",
     data: { url },
   };
 
@@ -40,8 +47,10 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
+        // si ya hay ventana abierta dentro del scope, enfocar
         if (client.url.includes("/BaseDatos/") && "focus" in client) return client.focus();
       }
+      // si no, abrir
       if (clients.openWindow) return clients.openWindow(url);
     })
   );
