@@ -1,22 +1,22 @@
 {
   "name": "IPUC · Miembros",
   "short_name": "IPUC Miembros",
-  "start_url": "/BaseDatos/",
-  "scope": "/BaseDatos/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
   "lang": "es-CO",
   "icons": [
     {
-      "src": "/BaseDatos/icono-192.png",
+      "src": "./icono-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/BaseDatos/icono-512.png",
+      "src": "./icono-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
-}
+} 
