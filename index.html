@@ -544,16 +544,17 @@ input[type="file"]::-webkit-file-upload-button{
   <div id="app"></div>
 
   <script type="module">
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-        await navigator.serviceWorker.register("/BaseDatos/sw-v2.js", { scope: "/BaseDatos/" });
-
-        } catch (e) {
-          console.log("SW register error:", e);
-        }
-      });
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      await navigator.serviceWorker.register("/BaseDatos/sw-v2.js", { scope: "/BaseDatos/" });
+      console.log("✅ SW registrado: /BaseDatos/sw-v2.js");
+    } catch (e) {
+      console.log("❌ SW register error:", e);
     }
+  });
+}
+
 
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -2372,4 +2373,5 @@ document.getElementById("cumplePwaMesSelect")?.addEventListener("change", (e) =>
   </script>
 </body>
 </html>
+
 
