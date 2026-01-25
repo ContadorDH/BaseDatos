@@ -547,7 +547,7 @@ input[type="file"]::-webkit-file-upload-button{
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
         try {
-await navigator.serviceWorker.register("/BaseDatos/sw.js", { scope: "/BaseDatos/" });
+          await navigator.serviceWorker.register("./sw.js", { scope: "./" });
         } catch (e) {
           console.log("SW register error:", e);
         }
@@ -2371,4 +2371,3 @@ document.getElementById("cumplePwaMesSelect")?.addEventListener("change", (e) =>
   </script>
 </body>
 </html>
-
