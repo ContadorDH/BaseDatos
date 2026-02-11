@@ -2575,7 +2575,11 @@ function viewInviteForm(inviteToken){
     </div>
   `);
 
-  const $ = (id) => node.querySelector("#" + id);
+  // ✅ MEJOR OPCIÓN: acepta "btnX" o "#btnX"
+  const $ = (id) => {
+    const clean = String(id).startsWith("#") ? String(id).slice(1) : String(id);
+    return node.querySelector("#" + clean);
+  };
 
   // Volver
   $("#btnInviteExit").addEventListener("click", ()=>{
@@ -2729,7 +2733,7 @@ function viewInviteForm(inviteToken){
         photo_url: photo.url,
       };
 
-      // ✅ OJO: endpoint correcto
+      // ✅ Endpoint correcto
       const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invite`, {
         method: "POST",
         headers: {
@@ -2756,6 +2760,7 @@ function viewInviteForm(inviteToken){
 
   return node;
 }
+
 
 
 
