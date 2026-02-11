@@ -2483,14 +2483,14 @@ function viewInviteForm(inviteToken){
 
       // ✅ ENVÍO SEGURO: Edge Function valida el token y guarda
       const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ inviteToken, payload })
-      });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_ANON_KEY,
+  },
+  body: JSON.stringify({ inviteToken, payload })
+});
+
 
       const data = await res.json().catch(()=> ({}));
       if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
