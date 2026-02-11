@@ -2385,7 +2385,7 @@ function viewInviteForm(inviteToken){
             <div style="font-weight:900;font-size:18px;">Formulario de registro</div>
             <div class="small muted">Llena el formulario y presiona Enviar.</div>
           </div>
-        
+          <button class="btn" id="btnInviteExit">Volver</button>
         </div>
 
         <hr class="sep" />
@@ -2577,7 +2577,11 @@ function viewInviteForm(inviteToken){
 
   const $ = (id) => node.querySelector("#" + id);
 
-
+  // Volver
+  $("#btnInviteExit").addEventListener("click", ()=>{
+    clearInviteFromUrl();
+    render();
+  });
 
   // Identificación: solo números (igual que la app)
   const idInput = $("#identification");
@@ -2763,7 +2767,28 @@ function render(){
 
   // ✅ Si es link público: SOLO formulario, sin header/login
   if (invite){
-    app.appendChild(viewInviteForm(invite));
+    // por si algo usa sticky/offset
+    document.documentElement.style.setProperty("--header-offset", "0px");
+
+    try{
+      const form = viewInviteForm(invite);
+      app.appendChild(form);
+    } catch(e){
+      console.error("Error render invite form:", e);
+
+      // fallback visible (para que no quede solo el fondo)
+      const box = document.createElement("div");
+      box.className = "container";
+      box.innerHTML = `
+        <div class="card">
+          <h3 style="margin:0 0 10px;">❌ Error cargando formulario</h3>
+          <div class="small muted">Mira la consola (F12) para más detalle.</div>
+          <hr class="sep"/>
+          <pre style="white-space:pre-wrap;word-break:break-word;max-width:100%;">${String(e?.message || e)}</pre>
+        </div>
+      `;
+      app.appendChild(box);
+    }
     return;
   }
 
@@ -2771,7 +2796,6 @@ function render(){
   const header = renderHeader();
   app.appendChild(header);
 
-  // ajusta sticky solo cuando hay header
   const h = Math.ceil(header.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--header-offset", (h + 8) + "px");
 
