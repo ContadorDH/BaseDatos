@@ -2385,7 +2385,7 @@ function viewInviteForm(inviteToken){
             <div style="font-weight:900;font-size:18px;">Formulario de registro</div>
             <div class="small muted">Llena el formulario y presiona Enviar.</div>
           </div>
-          <button class="btn" id="btnInviteExit">Volver</button>
+        
         </div>
 
         <hr class="sep" />
@@ -2577,11 +2577,7 @@ function viewInviteForm(inviteToken){
 
   const $ = (id) => node.querySelector("#" + id);
 
-  // Volver
-  $("#btnInviteExit").addEventListener("click", ()=>{
-    clearInviteFromUrl();
-    render();
-  });
+
 
   // Identificación: solo números (igual que la app)
   const idInput = $("#identification");
@@ -2762,19 +2758,24 @@ function viewInviteForm(inviteToken){
 
 function render(){
   app.innerHTML = "";
+
+  const invite = getInviteTokenFromUrl();
+
+  // ✅ Si es link público: SOLO formulario, sin header/login
+  if (invite){
+    app.appendChild(viewInviteForm(invite));
+    return;
+  }
+
+  // ✅ Normal (app): header + módulos
   const header = renderHeader();
   app.appendChild(header);
 
-  // ✅ calcula el alto real del encabezado y ajusta el sticky debajo
+  // ajusta sticky solo cuando hay header
   const h = Math.ceil(header.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--header-offset", (h + 8) + "px");
 
-const invite = getInviteTokenFromUrl();
-if (invite){
-  app.appendChild(viewInviteForm(invite));
-} else {
   app.appendChild(viewMiembros());
-}
 }
 
 
