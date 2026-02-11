@@ -2385,7 +2385,6 @@ function viewInviteForm(inviteToken){
             <div style="font-weight:900;font-size:18px;">Formulario de registro</div>
             <div class="small muted">Llena el formulario y presiona Enviar.</div>
           </div>
-          <button class="btn" id="btnInviteExit">Volver</button>
         </div>
 
         <hr class="sep" />
@@ -2581,11 +2580,7 @@ function viewInviteForm(inviteToken){
     return node.querySelector("#" + clean);
   };
 
-  // Volver
-  $("#btnInviteExit").addEventListener("click", ()=>{
-    clearInviteFromUrl();
-    render();
-  });
+
 
   // Identificación: solo números (igual que la app)
   const idInput = $("#identification");
@@ -2734,7 +2729,7 @@ function viewInviteForm(inviteToken){
       };
 
       // ✅ Endpoint correcto
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invite`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
