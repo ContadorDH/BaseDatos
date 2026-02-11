@@ -1415,6 +1415,46 @@ auth: {
 
     }
 
+
+    // ===== INVITES (link público) =====
+
+// tabla recomendada en Supabase: invite_links
+// columnas: token_hash (text), created_at (timestamp), expires_at (timestamp), used_at (timestamp null)
+async function createInviteToken(){
+  // token aleatorio seguro
+  const raw = crypto.getRandomValues(new Uint8Array(16));
+  const token = Array.from(raw).map(b=>b.toString(16).padStart(2,"0")).join("");
+
+  // hash simple (mejor guardar hash en DB, no el token plano)
+  const enc = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", enc);
+  const hash = Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+
+  // expira en 7 días (ajústalo)
+  const expires = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+
+  // registra el hash del token en supabase
+  const { error } = await supabase
+    .from("invite_links")
+    .insert({ token_hash: hash, expires_at: expires });
+
+  if (error) throw new Error(error.message);
+
+  return token; // este es el que va en el link
+}
+
+function getInviteTokenFromUrl(){
+  const p = new URLSearchParams(location.search);
+  return (p.get("invite") || "").trim();
+}
+
+function clearInviteFromUrl(){
+  const url = new URL(location.href);
+  url.searchParams.delete("invite");
+  history.replaceState({}, "", url.toString());
+}
+
+
     // ===== Header =====
     function renderHeader(){
       const node = el(`
@@ -1586,6 +1626,7 @@ function viewMiembros(){
 
   <button class="btn" id="btnSendBirthday" style="display:none;">🎂</button>
 
+<button class="btn" id="btnShareForm">🔗 Compartir formulario</button>
 
   <button class="btn primary" id="btnSave">Guardar</button>
 </div>
@@ -2088,6 +2129,35 @@ $("#btnTakePhoto").addEventListener("click", ()=> $("#photoInputCamera").click()
   });
 
   // Buttons
+
+$("#btnShareForm").addEventListener("click", async ()=>{
+  // (Mantén la misma regla que tus acciones: pedir auth local)
+  const okAuth = await requireAuth();
+  if (!okAuth) return;
+
+  try{
+    const token = await createInviteToken(); // crea el token (y lo registra en supabase)
+    const link = `${location.origin}${location.pathname}?invite=${encodeURIComponent(token)}`;
+
+    // Share API (móvil)
+    if (navigator.share){
+      await navigator.share({
+        title: "Formulario de registro",
+        text: "Abre este link y llena el formulario:",
+        url: link
+      });
+    } else {
+      // fallback: copiar
+      await navigator.clipboard.writeText(link);
+      toast("🔗 Link copiado al portapapeles.", "success");
+    }
+  } catch(e){
+    console.error(e);
+    toast("❌ No se pudo generar el link: " + (e?.message || e), "error");
+  }
+});
+
+
   $("#btnNew").addEventListener("click", ()=>{
     state.memberDraft = blankMember();
     state.selectedId = null;
@@ -2302,6 +2372,146 @@ else if (!enabled) $("#statusBadge").textContent = "Login requerido";
   return node;
 }
 
+function viewInviteForm(inviteToken){
+  const node = el(`
+    <div class="container">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:900;font-size:18px;">Formulario de registro</div>
+            <div class="small muted">Llena los datos y presiona Enviar.</div>
+          </div>
+          <button class="btn" id="btnInviteExit">Volver</button>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="panel">
+          <div class="row">
+            <div class="col">
+              <label>Nombres *</label>
+              <input id="pub_first_names" placeholder="Ej: Juan" />
+            </div>
+            <div class="col">
+              <label>Apellidos *</label>
+              <input id="pub_last_names" placeholder="Ej: Pérez" />
+            </div>
+            <div class="col">
+              <label>Identificación *</label>
+              <input id="pub_identification" placeholder="Ej: 123456789" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Edad *</label>
+              <input id="pub_age" type="number" min="0" placeholder="Ej: 25" />
+            </div>
+            <div class="col">
+              <label>Género *</label>
+              <select id="pub_gender">
+                <option value="">Seleccionar</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+              </select>
+            </div>
+            <div class="col">
+              <label>Ciudad</label>
+              <input id="pub_city" placeholder="Ej: Bogotá" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Teléfono</label>
+              <input id="pub_phone" placeholder="Ej: 3001234567" />
+            </div>
+            <div class="col">
+              <label>Dirección</label>
+              <input id="pub_address" placeholder="Ej: Calle 123 # 45-67" />
+            </div>
+            <div class="col">
+              <label>Observaciones</label>
+              <input id="pub_observations" placeholder="Opcional" />
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button class="btn primary" id="btnInviteSubmit">Enviar</button>
+          </div>
+
+          <div class="hint" style="margin-top:10px;">
+            * Este formulario usa un link de invitación.
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  node.querySelector("#btnInviteExit").addEventListener("click", ()=>{
+    clearInviteFromUrl();
+    render();
+  });
+
+  node.querySelector("#btnInviteSubmit").addEventListener("click", async ()=>{
+    try{
+      showLoader("Enviando…", "Guardando en la base de datos");
+      const payload = {
+        first_names: node.querySelector("#pub_first_names").value.trim(),
+        last_names: node.querySelector("#pub_last_names").value.trim(),
+        identification: node.querySelector("#pub_identification").value.trim(),
+        age: Number(node.querySelector("#pub_age").value),
+        gender: node.querySelector("#pub_gender").value,
+        city: node.querySelector("#pub_city").value.trim() || null,
+        phone: node.querySelector("#pub_phone").value.trim() || null,
+        address: node.querySelector("#pub_address").value.trim() || null,
+        observations: node.querySelector("#pub_observations").value.trim() || null,
+      };
+
+      if (!payload.first_names || !payload.last_names || !payload.identification){
+        toast("Nombres, apellidos e identificación son obligatorios.", "info");
+        return;
+      }
+      if (!Number.isFinite(payload.age) || payload.age < 0){
+        toast("La edad es obligatoria y debe ser válida (>= 0).", "info");
+        return;
+      }
+      if (!payload.gender){
+        toast("El género es obligatorio.", "info");
+        return;
+      }
+
+      // ✅ ENVÍO SEGURO: Edge Function valida el token y guarda
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ inviteToken, payload })
+      });
+
+      const data = await res.json().catch(()=> ({}));
+      if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+
+      toast("✅ Enviado correctamente. ¡Gracias!", "success");
+
+      clearInviteFromUrl();
+      render();
+
+    } catch(e){
+      console.error(e);
+      toast("❌ Error enviando: " + (e?.message || e), "error");
+    } finally {
+      hideLoader();
+    }
+  });
+
+  return node;
+}
+
+
 
 function render(){
   app.innerHTML = "";
@@ -2312,7 +2522,12 @@ function render(){
   const h = Math.ceil(header.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--header-offset", (h + 8) + "px");
 
+const invite = getInviteTokenFromUrl();
+if (invite){
+  app.appendChild(viewInviteForm(invite));
+} else {
   app.appendChild(viewMiembros());
+}
 }
 
 
