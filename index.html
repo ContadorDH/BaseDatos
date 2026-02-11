@@ -2373,70 +2373,196 @@ else if (!enabled) $("#statusBadge").textContent = "Login requerido";
 }
 
 function viewInviteForm(inviteToken){
+  // Draft local SOLO para el formulario público
+  const draft = blankMember();
+
   const node = el(`
     <div class="container">
       <div class="card">
+
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
           <div>
             <div style="font-weight:900;font-size:18px;">Formulario de registro</div>
-            <div class="small muted">Llena los datos y presiona Enviar.</div>
+            <div class="small muted">Llena el formulario y presiona Enviar.</div>
           </div>
           <button class="btn" id="btnInviteExit">Volver</button>
         </div>
 
         <hr class="sep" />
 
+        <!-- ✅ MISMO FORMULARIO QUE LA APP -->
         <div class="panel">
-          <div class="row">
-            <div class="col">
-              <label>Nombres *</label>
-              <input id="pub_first_names" placeholder="Ej: Juan" />
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div class="small">Ficha del miembro</div>
+            <div class="badge" id="statusBadgePublic">Formulario público</div>
+          </div>
+
+          <hr class="sep" />
+
+          <div class="row" style="align-items:flex-start;">
+            <div style="flex:0 0 auto;">
+              <div class="avatar" id="photoBox">
+                <div class="small">Sin foto</div>
+              </div>
+
+              <div style="margin-top:10px;" class="filebox" id="photoFileBox">
+                <label>Foto del miembro (JPG/PNG/WebP)</label>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn ok" type="button" id="btnTakePhoto">📷 Tomar foto</button>
+                  <button class="btn" type="button" id="btnPickPhoto">🖼️ Elegir archivo</button>
+                </div>
+
+                <input id="photoInputCamera" type="file" accept="image/*" capture="environment" style="display:none;" />
+                <input id="photoInput" type="file" accept="image/*" style="display:none;" />
+
+                <div class="hint" id="photoInfo">Se mostrará aquí como vista previa.</div>
+              </div>
             </div>
+
             <div class="col">
-              <label>Apellidos *</label>
-              <input id="pub_last_names" placeholder="Ej: Pérez" />
-            </div>
-            <div class="col">
-              <label>Identificación *</label>
-              <input id="pub_identification" placeholder="Ej: 123456789" />
+              <div class="row">
+                <div class="col">
+                  <label>Nombres *</label>
+                  <input id="first_names" />
+                </div>
+                <div class="col">
+                  <label>Apellidos *</label>
+                  <input id="last_names" />
+                </div>
+                <div class="col">
+                  <label>Identificación *</label>
+                  <input id="identification" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <div class="col">
+                  <label>Dirección</label>
+                  <input id="address" />
+                </div>
+                <div class="col">
+                  <label>Ciudad</label>
+                  <input id="city" />
+                </div>
+                <div class="col">
+                  <label>Fecha de nacimiento</label>
+                  <input id="birth_date" type="date" />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <div class="col">
+                  <label>Teléfono</label>
+                  <input id="phone" placeholder="Ej: 3001234567" inputmode="tel" />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <div class="col">
+                  <label>Edad *</label>
+                  <input id="age" type="number" min="0" />
+                </div>
+
+                <div class="col">
+                  <label>Género *</label>
+                  <select id="gender" class="select">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                  </select>
+                </div>
+
+                <div class="col">
+                  <label>Cargo en la iglesia</label>
+                  <input id="church_role" />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px;">
+                <div class="col">
+                  <label>Nombre del padre</label>
+                  <input id="father_name" />
+                </div>
+                <div class="col">
+                  <label>Nombre de la madre</label>
+                  <input id="mother_name" />
+                </div>
+                <div class="col">
+                  <label>Nombre de la congregación</label>
+                  <input id="congregation_name"/>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="row">
-            <div class="col">
-              <label>Edad *</label>
-              <input id="pub_age" type="number" min="0" placeholder="Ej: 25" />
-            </div>
-            <div class="col">
-              <label>Género *</label>
-              <select id="pub_gender">
-                <option value="">Seleccionar</option>
-                <option value="Masculino">Masculino</option>
-                <option value="Femenino">Femenino</option>
-              </select>
-            </div>
-            <div class="col">
-              <label>Ciudad</label>
-              <input id="pub_city" placeholder="Ej: Bogotá" />
-            </div>
-          </div>
+          <hr class="sep" />
 
           <div class="row">
             <div class="col">
-              <label>Teléfono</label>
-              <input id="pub_phone" placeholder="Ej: 3001234567" />
+              <label>Tiempo de conversión</label>
+              <input id="conversion_time" placeholder="Ej: 2 años / 6 meses" />
             </div>
             <div class="col">
-              <label>Dirección</label>
-              <input id="pub_address" placeholder="Ej: Calle 123 # 45-67" />
-            </div>
-            <div class="col">
-              <label>Observaciones</label>
-              <input id="pub_observations" placeholder="Opcional" />
+              <label>Lugar bautismo/acto</label>
+              <input id="event_place"/>
             </div>
           </div>
 
-          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <div class="row" style="margin-top:10px;">
+            <div class="col">
+              <label>Fecha del bautismo</label>
+              <input id="baptism_date" type="date" />
+            </div>
+            <div class="col">
+              <label>Fecha recepción Espíritu Santo</label>
+              <input id="holy_spirit_date" type="date" />
+            </div>
+            <div class="col">
+              <label>Pastor oficiante</label>
+              <input id="officiant_pastor" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div class="col">
+              <label>Fecha membresía en la congregación</label>
+              <input id="membership_date" type="date" />
+            </div>
+            <div class="col">
+              <label>Tiempo de membresía</label>
+              <input id="membership_time" placeholder="Ej: 1 año / 4 meses" />
+            </div>
+            <div class="col">
+              <label>Lugar de procedencia</label>
+              <input id="origin_place" />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;align-items:center;">
+            <div class="col">
+              <label>¿Menos de 6 meses en la congregación?</label>
+              <input id="less_than_6_months" type="checkbox" />
+              <div class="hint">Activa si el miembro lleva menos de 6 meses.</div>
+            </div>
+
+            <div class="col">
+              <label>Simpatizante</label>
+              <input id="is_sympathizer" type="checkbox" />
+              <div class="hint">Activa si la persona es simpatizante.</div>
+            </div>
+
+            <div class="col">
+              <div class="hint muted"></div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Observaciones</label>
+            <textarea id="observations" placeholder="Notas adicionales..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">
             <button class="btn primary" id="btnInviteSubmit">Enviar</button>
           </div>
 
@@ -2444,59 +2570,179 @@ function viewInviteForm(inviteToken){
             * Este formulario usa un link de invitación.
           </div>
         </div>
+
       </div>
     </div>
   `);
 
-  node.querySelector("#btnInviteExit").addEventListener("click", ()=>{
+  const $ = (id) => node.querySelector("#" + id);
+
+  // Volver
+  $("#btnInviteExit").addEventListener("click", ()=>{
     clearInviteFromUrl();
     render();
   });
 
-  node.querySelector("#btnInviteSubmit").addEventListener("click", async ()=>{
+  // Identificación: solo números (igual que la app)
+  const idInput = $("#identification");
+  if (idInput){
+    const onlyDigits = () => {
+      const v = idInput.value || "";
+      const cleaned = v.replace(/\D+/g, "");
+      if (v !== cleaned) idInput.value = cleaned;
+    };
+    idInput.addEventListener("input", onlyDigits);
+    idInput.addEventListener("paste", () => setTimeout(onlyDigits, 0));
+  }
+
+  // Foto (igual que la app)
+  function renderPhoto(url){
+    const box = $("#photoBox");
+    box.innerHTML = "";
+    if (!url){
+      box.appendChild(el(`<div class="small">Sin foto</div>`));
+      return;
+    }
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = "Foto miembro";
+    box.appendChild(img);
+  }
+
+  function handlePickedPhoto(file){
+    draft.photo_file = file;
+
+    if (!file){
+      draft.photo_preview_url = "";
+      renderPhoto("");
+      $("#photoInfo").textContent = "Se mostrará aquí como vista previa.";
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    draft.photo_preview_url = url;
+    renderPhoto(url);
+    $("#photoInfo").textContent = `${file.name} · vista previa lista`;
+  }
+
+  $("#photoInput").addEventListener("change", ()=>{
+    const file = $("#photoInput").files?.[0] || null;
+    handlePickedPhoto(file);
+  });
+
+  $("#photoInputCamera").addEventListener("change", ()=>{
+    const file = $("#photoInputCamera").files?.[0] || null;
+    handlePickedPhoto(file);
+  });
+
+  $("#btnPickPhoto").addEventListener("click", ()=> $("#photoInput").click());
+  $("#btnTakePhoto").addEventListener("click", ()=> $("#photoInputCamera").click());
+
+  // Leer formulario (mismo mapping que tu saveMember)
+  function readPublicForm(){
+    draft.first_names = $("#first_names").value.trim();
+    draft.last_names = $("#last_names").value.trim();
+    draft.identification = $("#identification").value.trim();
+    draft.address = $("#address").value.trim();
+    draft.city = $("#city").value.trim();
+    draft.phone = ($("#phone")?.value || "").trim();
+    draft.birth_date = $("#birth_date").value || "";
+    draft.father_name = $("#father_name").value.trim();
+    draft.mother_name = $("#mother_name").value.trim();
+    draft.congregation_name = $("#congregation_name").value.trim();
+    draft.conversion_time = $("#conversion_time").value.trim();
+    draft.baptism_date = $("#baptism_date").value || "";
+    draft.holy_spirit_date = $("#holy_spirit_date").value || "";
+    draft.event_place = $("#event_place").value.trim();
+    draft.officiant_pastor = $("#officiant_pastor").value.trim();
+    draft.membership_date = $("#membership_date").value || "";
+    draft.membership_time = $("#membership_time").value.trim();
+    draft.origin_place = $("#origin_place").value.trim();
+    draft.less_than_6_months = $("#less_than_6_months").checked;
+    draft.is_sympathizer = $("#is_sympathizer").checked;
+    draft.observations = $("#observations").value.trim();
+
+    const ageRaw = ($("#age").value || "").trim();
+    draft.age = ageRaw === "" ? null : Number(ageRaw);
+
+    draft.church_role = $("#church_role").value.trim();
+    draft.gender = $("#gender").value || "";
+
+    return draft;
+  }
+
+  // Enviar
+  $("#btnInviteSubmit").addEventListener("click", async ()=>{
     try{
       showLoader("Enviando…", "Guardando en la base de datos");
-      const payload = {
-        first_names: node.querySelector("#pub_first_names").value.trim(),
-        last_names: node.querySelector("#pub_last_names").value.trim(),
-        identification: node.querySelector("#pub_identification").value.trim(),
-        age: Number(node.querySelector("#pub_age").value),
-        gender: node.querySelector("#pub_gender").value,
-        city: node.querySelector("#pub_city").value.trim() || null,
-        phone: node.querySelector("#pub_phone").value.trim() || null,
-        address: node.querySelector("#pub_address").value.trim() || null,
-        observations: node.querySelector("#pub_observations").value.trim() || null,
-      };
 
-      if (!payload.first_names || !payload.last_names || !payload.identification){
+      const m = readPublicForm();
+
+      // Validaciones iguales
+      if (!m.first_names || !m.last_names || !m.identification){
         toast("Nombres, apellidos e identificación son obligatorios.", "info");
         return;
       }
-      if (!Number.isFinite(payload.age) || payload.age < 0){
-        toast("La edad es obligatoria y debe ser válida (>= 0).", "info");
+      const ageNum = Number(m.age);
+      if (m.age === null || !Number.isFinite(ageNum) || ageNum < 0){
+        toast("La edad es obligatoria y debe ser un número válido (>= 0).", "info");
         return;
       }
-      if (!payload.gender){
-        toast("El género es obligatorio.", "info");
+      if (!m.gender){
+        toast("El género es obligatorio. Selecciona Masculino o Femenino.", "info");
         return;
       }
 
-      // ✅ ENVÍO SEGURO: Edge Function valida el token y guarda
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invit`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "apikey": SUPABASE_ANON_KEY,
-  },
-  body: JSON.stringify({ inviteToken, payload })
-});
+      // ✅ Subir foto igual que la app (si envían foto)
+      const prefix = (m.identification || "unknown").trim() || "unknown";
+      let photo = { path: null, url: null };
+      if (m.photo_file){
+        photo = await uploadFile("member-photos", m.photo_file, prefix);
+      }
 
+      // Payload COMPLETO (mismo que saveMember)
+      const payload = {
+        first_names: m.first_names,
+        last_names: m.last_names,
+        identification: m.identification,
+        age: m.age ?? null,
+        gender: m.gender || null,
+        church_role: m.church_role || null,
+        address: m.address || null,
+        city: m.city || null,
+        phone: m.phone || null,
+        birth_date: m.birth_date || null,
+        father_name: m.father_name || null,
+        mother_name: m.mother_name || null,
+        congregation_name: m.congregation_name || null,
+        conversion_time: m.conversion_time || null,
+        baptism_date: m.baptism_date || null,
+        holy_spirit_date: m.holy_spirit_date || null,
+        event_place: m.event_place || null,
+        officiant_pastor: m.officiant_pastor || null,
+        membership_date: m.membership_date || null,
+        membership_time: m.membership_time || null,
+        origin_place: m.origin_place || null,
+        less_than_6_months: !!m.less_than_6_months,
+        is_sympathizer: !!m.is_sympathizer,
+        observations: m.observations || null,
+        photo_path: photo.path,
+        photo_url: photo.url,
+      };
+
+      // ✅ OJO: endpoint correcto
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-member-invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ inviteToken, payload })
+      });
 
       const data = await res.json().catch(()=> ({}));
       if (!res.ok) throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
 
       toast("✅ Enviado correctamente. ¡Gracias!", "success");
-
       clearInviteFromUrl();
       render();
 
@@ -2510,6 +2756,7 @@ function viewInviteForm(inviteToken){
 
   return node;
 }
+
 
 
 
